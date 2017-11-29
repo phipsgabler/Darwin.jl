@@ -9,7 +9,7 @@ end
 
 GeneticProblem(ip, g, mp) = GeneticProblem{eltype(ip), typeof(ip)}(ip, g, mp)
 
-function mutate end
+function mutate! end
 
 function crossover end
 
@@ -37,19 +37,22 @@ function evolve{T, P}(problem::GeneticProblem{T, P})
     for g = 2:problem.generations
         children = similar(problem.initial_population)
         parents = populations[g - 1]
-        
+
+        # @show parents
         fitness_distribution = Categorical(softmax(fitness.(parents)))
         
-        for n = 1:div(N, 2)
+        for n = 1:2:N-1
             p1, p2 = tuple(parents[rand(fitness_distribution, 2)]...)
             c1, c2 = crossover(p1, p2)
 
-            mutation() || (c1 = mutate(c1))
-            mutation() || (c2 = mutate(c2))
+            mutation() || mutate!(c1)
+            mutation() || mutate!(c2)
 
             children[n], children[n + 1] = c1, c2
         end
 
         populations[g] = children
     end
+
+    populations[end]
 end
