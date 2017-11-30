@@ -8,6 +8,6 @@ function evolve end
 
 include("GA.jl")
 
-export GeneticModel, evolve, genetype, populationtype
+export GAModel, evolve, genetype, populationtype
 
 end # module

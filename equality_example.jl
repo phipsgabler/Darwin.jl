@@ -50,7 +50,7 @@ end
 
 
 initial_population = rand(EqualityMonster, 16)
-model = GeneticModel(initial_population, selection, crossover, mutate!, 500)
+model = GAModel(initial_population, selection, crossover, mutate!, 500)
 println(model)
 
 result = evolve(model)

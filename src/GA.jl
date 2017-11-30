@@ -1,4 +1,4 @@
-struct GeneticModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
+struct GAModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
     initial_population::P
     selection::Fs
     crossover::Fc
@@ -7,12 +7,16 @@ struct GeneticModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
     matingfactor::Int
 end
 
-GeneticModel(ip, sel, co, mut!, g, mf = 2) = GeneticModel(ip, sel, co, mut!, g, mf)
+GAModel(ip, sel, co, mut!, g, mf = 2) = GAModel(ip, sel, co, mut!, g, mf)
 
-populationtype{P, Fs, Fc, Fm}(::GeneticModel{P, Fs, Fc, Fm}) = P
-genetype{P, Fs, Fc, Fm}(::GeneticModel{P, Fs, Fc, Fm}) = eltype(P)
+populationtype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = P
+genetype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = eltype(P)
 
-function evolve(model::GeneticModel)
+
+# struct 
+
+
+function evolve(model::GAModel)
     N = length(model.initial_population)
     M = model.matingfactor
     @assert N % M == 0
