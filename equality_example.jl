@@ -23,10 +23,12 @@ end
 
 function selection(parents::Vector{EqualityMonster})
     fittest = indmax(fitness(e) for e in parents)
-    (fittest, rand(indices(parents, 1)))
+    [fittest, rand(indices(parents, 1))]
 end
 
-function crossover(ent1::EqualityMonster, ent2::EqualityMonster)
+function crossover(parents::Vector{EqualityMonster})
+    ent1, ent2 = tuple(parents...)
+    
     # grab each element from a random parent
     child1, child2 = EqualityMonster(), EqualityMonster()
     crossover_points = rand(Bool, 5)
@@ -35,7 +37,7 @@ function crossover(ent1::EqualityMonster, ent2::EqualityMonster)
     child2.abcde[crossover_points] .= view(ent2.abcde, crossover_points)
     child2.abcde[.~crossover_points] .= view(ent1.abcde, .~crossover_points)
 
-    child1, child2
+    [child1, child2]
 end
 
 function mutate!(ent::EqualityMonster)

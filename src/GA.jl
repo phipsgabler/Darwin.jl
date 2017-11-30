@@ -4,14 +4,18 @@ struct GeneticModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
     crossover::Fc
     mutate!::Fm
     generations::Int
+    matingfactor::Int
 end
+
+GeneticModel(ip, sel, co, mut!, g, mf = 2) = GeneticModel(ip, sel, co, mut!, g, mf)
 
 populationtype{P, Fs, Fc, Fm}(::GeneticModel{P, Fs, Fc, Fm}) = P
 genetype{P, Fs, Fc, Fm}(::GeneticModel{P, Fs, Fc, Fm}) = eltype(P)
 
 function evolve(model::GeneticModel)
     N = length(model.initial_population)
-    @assert iseven(N)
+    M = model.matingfactor
+    @assert N % M == 0
     
     populations = Vector{populationtype(model)}(model.generations)
     populations[1] = model.initial_population
@@ -20,14 +24,12 @@ function evolve(model::GeneticModel)
         children = similar(model.initial_population)
         parents = populations[g - 1]
         
-        for n = 1:2:N-1
-            p1, p2 = model.selection(parents)
-            c1, c2 = model.crossover(parents[p1], parents[p2])
+        for n = 1:M:N-M+1
+            selected = model.selection(parents)
+            offspring = model.crossover(parents[selected])
 
-            model.mutate!(c1)
-            model.mutate!(c2)
-
-            children[n], children[n + 1] = c1, c2
+            model.mutate!.(offspring)
+            children[n:n+M-1] .= offspring
         end
 
         populations[g] = children
