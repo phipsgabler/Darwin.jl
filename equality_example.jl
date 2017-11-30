@@ -1,4 +1,9 @@
-import Darwin
+using Darwin
+using Distributions
+import Base: rand
+
+# This example is taken from Westley Argentum:
+# https://github.com/WestleyArgentum/GeneticAlgorithms.jl/README.md
 
 struct EqualityMonster
     # a + 2b + 3c + 4d + 5e = 42
@@ -7,14 +12,21 @@ end
 
 EqualityMonster() = EqualityMonster(Vector{Int}(5))
 
-function Darwin.fitness(ent::EqualityMonster)
+Base.rand(rng::AbstractRNG, ::Type{EqualityMonster}) = EqualityMonster(rand(rng, 0:42, 5))
+
+function fitness(ent::EqualityMonster)
     # we want the expression `a + 2b + 3c + 4d + 5e - 42`
     # to be as close to 0 as possible
     score = dot(ent.abcde, 1:5)
-    abs(score - 42)
+    1 / abs(score - 42)
 end
 
-function Darwin.crossover(ent1::EqualityMonster, ent2::EqualityMonster)
+function selection(parents::Vector{EqualityMonster})
+    fittest = indmax(fitness(e) for e in parents)
+    (fittest, rand(indices(parents, 1)))
+end
+
+function crossover(ent1::EqualityMonster, ent2::EqualityMonster)
     # grab each element from a random parent
     child1, child2 = EqualityMonster(), EqualityMonster()
     crossover_points = rand(Bool, 5)
@@ -26,17 +38,20 @@ function Darwin.crossover(ent1::EqualityMonster, ent2::EqualityMonster)
     child1, child2
 end
 
-function Darwin.mutate!(ent::EqualityMonster)
+function mutate!(ent::EqualityMonster)
     # let's go crazy and mutate 20% of the time
-    # rand(Float64) < 0.8 && return
-
-    rand_element = rand(1:5)
-    ent.abcde[rand_element] = rand(0:42)
+    if rand() < 0.2
+        rand_element = rand(1:5)
+        ent.abcde[rand_element] = rand(0:42)
+    end
 end
 
 
-initial_population = [EqualityMonster(rand(0:42, 5)) for _ in 1:16]
-problem = Darwin.GeneticProblem(initial_population, 1000, 0.2)
+initial_population = rand(EqualityMonster, 16)
+model = GeneticModel(initial_population, selection, crossover, mutate!, 500)
+println(model)
 
-println(Darwin.evolve(problem))
+result = evolve(model)
+@show result
+@show fitness.(result)
 

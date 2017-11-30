@@ -1,16 +1,13 @@
 module Darwin
 
-abstract type AbstractEvolutionaryProblem end
+abstract type AbstractEvolutionaryModel end
 
-export AbstractEvolutionaryProblem
+export AbstractEvolutionaryModel
 
 function evolve end
 
 include("GA.jl")
 
-export AbstractEvolutionaryAlgorithm
-
-export GeneticProblem
-export mutate, crossover, fitness, evolve
+export GeneticModel, evolve
 
 end # module
