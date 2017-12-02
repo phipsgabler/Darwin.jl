@@ -46,7 +46,8 @@ function evolve(model::GAModel, generations::Int;
     end
 
     verbose && println("Evolved ", evolver.generation, " generations in ",
-                       evolver.cumtime, " seconds total.")
+                evolver.cumtime, " seconds total, ",
+                "final population size ", length(evolver.solution.population))
     
     return evolver.solution
 end
