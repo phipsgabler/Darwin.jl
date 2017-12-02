@@ -11,39 +11,56 @@ const bounds = (-2.0, 2.0)
 
 fitness(x::Entity) = -rosenbrock(x)
 
-function selection(population::Population)
-    # @show population, fitness.(population)
-    exps = exp.(fitness.(population))
-    probabilities = exps ./ sum(exps)
-    choices = rand(Categorical(probabilities), size(population))
+@inline function softmax(x)
+    exps = exp.(x)
+    exps ./= sum(exps)
+    return exps
+end
+
+function _selection(population::Population, selection_temperature)
+    # softmax selection
+    probabilities = softmax(fitness.(population) ./ selection_temperature)
+    choices = rand(Categorical(probabilities), 2)
     return choices
 end
+selection = ParametrizedFunction(_selection, [1.0])
 
-function crossover(population::Population)
-    N = length(population)
-    partners = randperm(N)
-    mixing = rand(N)
-    return mixing .* population .+ (1 .- mixing) .* population[partners]
-end
-
-function mutate!(x::Entity)
-    if rand() < 0.05
-        location = rand(Bool, size(x))
-        x[location] .= rand(Uniform(bounds...), length(x))[location]
+function _crossover(parents::Vector{Entity}, crossover_rate)
+    # arithmetic crossover
+    if rand() < crossover_rate
+        mixing = rand()
+        return [(1 - mixing) * parents[1] + mixing * parents[2],
+                (1 - mixing) * parents[2] + mixing * parents[1]]
+    else
+        return parents
     end
-    
-    # mutation_mask = rand(Bernoulli(0.2), size(population)) .== 1
-    # n_mutations = countnz(mutation_mask)
-    # population[mutation_mask] .= rand(Uniform(bounds...), n_mutations)
 end
+crossover = ParametrizedFunction(_crossover, [0.7])
+
+function _mutate!(x::Entity, mutation_rate)
+    # uniform mutation of each component separately
+    (rand() < mutation_rate) && (x[1] = rand(Uniform(bounds...)))
+    (rand() < mutation_rate) && (x[2] = rand(Uniform(bounds...)))
+end
+mutate! = ParametrizedFunction(_mutate!, [0.3])
+
+function callback(evolver)
+    (evolver.model.selection.parameters[1] > 0.15) && (evolver.model.selection.parameters[1] *= 0.99)
+    if evolver.generation % 1000 == 0
+        evolver.model.mutate!.parameters[1] *= 0.9
+        println(maximum(fitness.(evolver.solution.population)))
+    end
+end
+
 
 const N = 128
 initial_population = [rand(Uniform(bounds...), 2) for _ in 1:N]
-model = GAModel(initial_population, selection, crossover, mutate!, N)
-# println(model)
+model = GAModel(initial_population, selection, crossover, mutate!, 2)
 
-result = evolve(model, 1000; verbose = true)
-@show fitness.(result.population)
+result = evolve(model, 5000; verbose = true, callback = callback)
+sample = rand(result.population, 10)
+@show sample
+@show fitness.(sample)
 
 
 # function list: https://www.sfu.ca/~ssurjano/optimization.html

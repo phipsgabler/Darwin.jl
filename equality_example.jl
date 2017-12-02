@@ -61,6 +61,7 @@ model = GAModel(initial_population, selection, crossover, mutate!)
 # println(model)
 
 result = evolve(model, 100; verbose = true, callback = callback)
-# @show result
-@show fitness.(result.population)
+sample = rand(result.population, 5)
+@show sample
+@show fitness.(sample)
 
