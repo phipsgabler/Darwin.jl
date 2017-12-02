@@ -48,12 +48,19 @@ function mutate!(ent::EqualityMonster)
     end
 end
 
+function callback(evaluator)
+    if evaluator.generation % 10 == 0
+        println("Generation ", evaluator.generation,
+                ", time: ", evaluator.solution.timeinfo.time)
+    end
+end
+
 
 initial_population = rand(EqualityMonster, 16)
-model = GAModel(initial_population, selection, crossover, mutate!, 500)
-println(model)
+model = GAModel(initial_population, selection, crossover, mutate!)
+# println(model)
 
-result = evolve(model)
-@show result
-@show fitness.(result)
+result = evolve(model, 100; verbose = true, callback = callback)
+# @show result
+@show fitness.(result.population)
 
