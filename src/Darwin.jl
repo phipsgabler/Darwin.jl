@@ -11,6 +11,8 @@ function evolve end
 include("utils.jl")
 include("GA.jl")
 
-export GAModel, evolve, genetype, populationtype
+export GAModel, genetype, populationtype
+export evolve, init, evolvestep!
+export ParametrizedFunction
 
 end # module
