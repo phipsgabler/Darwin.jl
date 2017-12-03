@@ -16,6 +16,8 @@ end
 (pf::ParametrizedFunction)(x) = pf.f(x, pf.parameters...)
 
 
+# see https://github.com/JuliaLang/julia/blob/master/doc/src/devdocs/ast.md
+# using MacroTools
 # macro parametrized(fundef)
 #     fsplit = splitdef(fundef)
 #     tname = gensym(fsplit[:name])
