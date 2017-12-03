@@ -14,7 +14,7 @@ form are supported.
 At the simplest, you specify a `GAModel` and call `evolve` on it:
 
 ```julia
-model = GAModel(initial_population, selection, crossover, mutate!, 2)
+model = GAModel(initial_population, selection, crossover, mutate!, matingfactor)
 result = evolve(model, 100; verbose = true)
 ```
 
@@ -36,6 +36,11 @@ with the following conventions:
   want for breeding.  It should not modify the parents, but produce new individuals (so if you don't
   want to do any crossover, at least copy the parents!).
 - `mutate!` should mutate one individual in-place.
+
+`matingfactor` is the size of the result of `selection` and input of `crossover`, it specifies how
+many individuals are crossed over at once (this allows you, for example, to implement pairwise
+crossover with a mating factor of 2, or as a vectorized operation by setting it to the size of the
+population).
 
 Note that you don't have to explicitely give fitness as an argument to the model -- it is only
 implicitely used in `selection`, where you usually will select fitter individuals more likely.
