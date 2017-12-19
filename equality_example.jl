@@ -21,14 +21,15 @@ function fitness(ent::EqualityMonster)
     1 / abs(score - 42)
 end
 
-function selection(parents::Vector{EqualityMonster})
+function selections(parents::Vector{EqualityMonster})
     fittest = indmax(fitness(e) for e in parents)
-    [fittest, rand(indices(parents, 1))]
+    M = length(parents) ÷ 2
+    [(fittest, rand(indices(parents, 1))) for _ in 1:M]
 end
 
 function crossover(parents::Vector{EqualityMonster})
     ent1, ent2 = tuple(parents...)
-    
+
     # grab each element from a random parent
     child1, child2 = EqualityMonster(), EqualityMonster()
     crossover_points = rand(Bool, 5)
@@ -57,11 +58,10 @@ end
 
 
 initial_population = rand(EqualityMonster, 16)
-model = GAModel(initial_population, selection, crossover, mutate!)
+model = GAModel(initial_population, selections, crossover, mutate!)
 # println(model)
 
 result = evolve(model, 100; verbose = true, callback = callback)
 sample = rand(result.population, 5)
 @show sample
 @show fitness.(sample)
-

@@ -2,14 +2,13 @@ using Base.Iterators: take
 
 struct GAModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
     initial_population::P
-    selection::Fs
+    selections::Fs
     crossover::Fc
     mutate!::Fm
-    matingfactor::Int
 end
 
-GAModel(ip::P, sel::Fs, co::Fc, mut::Fm, mf = 2) where {P, Fs, Fc, Fm} =
-    GAModel{P, Fs, Fc, Fm}(ip, sel, co, mut, mf)
+GAModel(ip::P, sel::Fs, co::Fc, mut::Fm) where {P, Fs, Fc, Fm} =
+    GAModel{P, Fs, Fc, Fm}(ip, sel, co, mut)
 
 populationtype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = P
 genetype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = eltype(P)
@@ -25,21 +24,19 @@ mutable struct GAEvolver{P<:AbstractVector, Fs, Fc, Fm}
     generation::Int
     solution::GASolution{P}
     populationsize::Int
-    matingfactor::Int
     cumtime::Float64
 end
 
-GAEvolver(m::GAModel{P, Fs, Fc, Fm}, g, s::GASolution{P}, ps, mf, ct = 0.0) where {P, Fs, Fc, Fm} =
-    GAEvolver{P, Fs, Fc, Fm}(m, g, s, ps, mf, ct)
+GAEvolver(m::GAModel{P, Fs, Fc, Fm}, g, s::GASolution{P}) where {P, Fs, Fc, Fm} =
+    GAEvolver{P, Fs, Fc, Fm}(m, g, s, length(s.population), 0.0)
 
 function evolve(model::GAModel, generations::Int;
                 verbose = false,
                 callback = evaluator -> nothing)
     @assert generations >= 1
-    
+
     evolver = init(model)
-    verbose && println("Starting with population of size ", evolver.populationsize,
-                       ", mating factor ", evolver.matingfactor, "...")
+    verbose && println("Starting with population of size ", evolver.populationsize)
 
     for step in take(evolver, generations - 1)
         callback(step)
@@ -48,37 +45,22 @@ function evolve(model::GAModel, generations::Int;
     verbose && println("Evolved ", evolver.generation, " generations in ",
                 evolver.cumtime, " seconds total, ",
                 "final population size ", length(evolver.solution.population))
-    
+
     return evolver.solution
 end
 
-
-
-function breed!(model, N, M, parents, children)
-    for i = 1:M:N-M+1
-        children_section = i:i+M-1
-        selected = model.selection(parents)
-        children[children_section] .= model.crossover(parents[selected])
-        model.mutate!.(children[children_section])
-    end
-end
-
 function init(model::GAModel)
-    N = length(model.initial_population)
-    M = model.matingfactor
-    @assert N % M == 0
-    
-    GAEvolver(model, 1, GASolution(model.initial_population, notime), N, M)
+    GAEvolver(model, 1, GASolution(model.initial_population, notime))
 end
+
 
 function evolvestep!(evolver::GAEvolver)
-    N = evolver.populationsize
-    M = evolver.matingfactor
     parents = evolver.solution.population
-    children = similar(parents)
+    children = similar(parents, 0)
+    sizehint!(children, length(parents))
 
-    _, t, bytes, gctime, memallocs = @timed breed!(evolver.model, N, M, parents, children)
-    
+    _, t, bytes, gctime, memallocs = @timed breed!(evolver.model, parents, children)
+
     evolver.solution = GASolution(children, TimeInfo(t, bytes, gctime, memallocs))
     evolver.generation += 1
     evolver.cumtime += t
@@ -86,6 +68,14 @@ function evolvestep!(evolver::GAEvolver)
     evolver
 end
 
+
+function breed!(model, parents, children)
+    for selected in model.selections(parents)
+        offspring = model.crossover(parents[collect(selected)])
+        model.mutate!.(offspring)
+        append!(children, offspring)
+    end
+end
 
 # iterator interface for evolver; for implementation, see
 # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/blob/master/src/iterator_interface.jl
