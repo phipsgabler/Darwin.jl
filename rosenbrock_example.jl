@@ -17,13 +17,13 @@ fitness(x::Entity) = -rosenbrock(x)
     return exps
 end
 
-function _selection(population::Population, selection_temperature)
+function _selections(population::Population, selection_temperature)
     # softmax selection
     probabilities = softmax(fitness.(population) ./ selection_temperature)
-    choices = rand(Categorical(probabilities), 2)
-    return choices
+    M = length(population) ÷ 2
+    [rand(Categorical(probabilities), 2) for _ in 1:M]
 end
-selection = ParametrizedFunction(_selection, [1.0])
+selections = ParametrizedFunction(_selections, [1.0])
 
 function _crossover(parents::Vector{Entity}, crossover_rate)
     # arithmetic crossover
@@ -45,17 +45,19 @@ end
 mutate! = ParametrizedFunction(_mutate!, [0.3])
 
 function callback(evolver)
-    (evolver.model.selection.parameters[1] > 0.15) && (evolver.model.selection.parameters[1] *= 0.99)
+    (evolver.model.selections.parameters[1] > 0.15) &&
+        (evolver.model.selections.parameters[1] *= 0.99)
     if evolver.generation % 1000 == 0
         evolver.model.mutate!.parameters[1] *= 0.9
-        println(maximum(fitness.(evolver.solution.population)))
+        println("Maximum fitness at generation ", evolver.generation,
+                ": ", maximum(fitness.(evolver.solution.population)))
     end
 end
 
 
 const N = 128
 initial_population = [rand(Uniform(bounds...), 2) for _ in 1:N]
-model = GAModel(initial_population, selection, crossover, mutate!, 2)
+model = GAModel(initial_population, selections, crossover, mutate!)
 
 result = evolve(model, 5000; verbose = true, callback = callback)
 sample = rand(result.population, 10)
