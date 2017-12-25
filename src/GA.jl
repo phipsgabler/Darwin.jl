@@ -71,9 +71,9 @@ end
 
 function breed!(model, parents, children)
     for selected in model.selections(parents)
-        offspring = model.crossover(parents[collect(selected)])
+        offspring = model.crossover(parents[collect(Int, selected)])
         model.mutate!.(offspring)
-        append!(children, offspring)
+        append!(children, collect(eltype(children), offspring))
     end
 end
 

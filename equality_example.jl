@@ -21,10 +21,10 @@ function fitness(ent::EqualityMonster)
     1 / abs(score - 42)
 end
 
-function selections(parents::Vector{EqualityMonster})
-    fittest = indmax(fitness(e) for e in parents)
-    M = length(parents) ÷ 2
-    [(fittest, rand(indices(parents, 1))) for _ in 1:M]
+function selections(population::Vector{EqualityMonster})
+    fittest = indmax(fitness(e) for e in population)
+    M = length(population) ÷ 2
+    [(fittest, rand(indices(population, 1))) for _ in 1:M]
 end
 
 function crossover(parents::Vector{EqualityMonster})
@@ -38,7 +38,7 @@ function crossover(parents::Vector{EqualityMonster})
     child2.abcde[crossover_points] .= view(ent2.abcde, crossover_points)
     child2.abcde[.~crossover_points] .= view(ent1.abcde, .~crossover_points)
 
-    [child1, child2]
+    child1, child2
 end
 
 function mutate!(ent::EqualityMonster)
