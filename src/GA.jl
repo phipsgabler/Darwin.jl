@@ -56,10 +56,16 @@ end
 
 function evolvestep!(evolver::GAEvolver)
     parents = evolver.solution.population
+    selections = evolver.model.selections(parents)
     children = similar(parents, 0)
-    sizehint!(children, length(parents))
 
-    _, t, bytes, gctime, memallocs = @timed breed!(evolver.model, parents, children)
+    if iteratorsize(selections) == Base.HasLength()
+        sizehint!(children, length(selections))
+    else
+        sizehint!(children, length(parents))
+    end
+
+    _, t, bytes, gctime, memallocs = @timed breed!(evolver.model, parents, selections, children)
 
     evolver.solution = GASolution(children, TimeInfo(t, bytes, gctime, memallocs))
     evolver.generation += 1
@@ -69,8 +75,8 @@ function evolvestep!(evolver::GAEvolver)
 end
 
 
-function breed!(model, parents, children)
-    for selected in model.selections(parents)
+function breed!(model, parents, selections, children)
+    for selected in selections
         offspring = model.crossover(parents[collect(Int, selected)])
         model.mutate!.(offspring)
         append!(children, collect(eltype(children), offspring))
