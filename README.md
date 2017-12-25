@@ -14,7 +14,7 @@ form are supported.
 At the simplest, you specify a `GAModel` and call `evolve` on it:
 
 ```julia
-model = GAModel(initial_population, selection, crossover, mutate!, matingfactor)
+model = GAModel(initial_population, selections, crossover, mutate!)
 result = evolve(model, 100; verbose = true)
 ```
 
@@ -26,21 +26,20 @@ generation, which hopefully will contain very fit individuals; you can check tha
 ```
 
 The model is specified by an initial population, which is an `AbstractArray` of usually randomly
-chosen individuals.  `selection`, `crossover`, and `mutate!` are functions (or at least callables)
+chosen individuals.  `selections`, `crossover`, and `mutate!` are functions (or at least callables)
 with the following conventions:
 
-- `selection` takes the current population and returns a vector of indices which are chosen to
-  breed.  This is the place where you should use the fitness functions of the problem.
-  The size of the selection should be `matingfactor`. 
-- `crossover` receives a choice of parents of size `matingfactor` and should perform whatever you
-  want for breeding.  It should not modify the parents, but produce new individuals (so if you don't
-  want to do any crossover, at least copy the parents!).
+- `selections` takes the current population and returns an iterable of iterables of indices which
+  are chosen to breed.  This is the place where you should use the fitness functions of the problem.
+- `crossover` receives a choice of parents as indexed by a `selection` and should perform whatever
+  you want for breeding.  It should not modify the parents, but produce new individuals (so if you
+  don't want to do any crossover, at least copy the parents!).
 - `mutate!` should mutate one individual in-place.
 
-`matingfactor` is the size of the result of `selection` and input of `crossover`, it specifies how
-many individuals are crossed over at once (this allows you, for example, to implement pairwise
-crossover with a mating factor of 2, or as a vectorized operation by setting it to the size of the
-population).
+To implement, for example, to implement pairwise crossover with a mating factor of 2, you can
+`selections` have return an array of 2-tuples of `Int`s and let `crossover` take 2-tuples of
+entities as argument.  The size of the population can also change during evolution, by returning
+bigger or smaller selections.
 
 Note that you don't have to explicitely give fitness as an argument to the model -- it is only
 implicitely used in `selection`, where you usually will select fitter individuals more likely.
@@ -64,7 +63,7 @@ time, you can do the following:
 ```julia
 evolver = init(model)
 for step in take(evolver, 100)
-	println(maximum(fitness.(evolver.solution.population)))
+    println(maximum(fitness.(evolver.solution.population)))
 end
 ```
 
@@ -88,8 +87,8 @@ Note that this is only a draft.  I don't claim to do things right.
 ## ToDo
 
 - Testing
+- Immutable iteration?
 - Illustrated examples with notebooks
 - Multiple callbacks (like `CallbackSet` for DiffEq), `terminate!` function for the evolver
-- More flexible interface with `selection`/`crossover`, avoiding specification of `matingfactor`
 - Predefined operators for selection, mutation and crossover
 - Evolution strategies
