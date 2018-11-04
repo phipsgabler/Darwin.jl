@@ -1,4 +1,5 @@
-using Base.Iterators: take
+export GAModel, genetype, populationtype
+export evolve, init, evolvestep!
 
 struct GAModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
     initial_population::P
@@ -10,8 +11,8 @@ end
 GAModel(ip::P, sel::Fs, co::Fc, mut::Fm) where {P, Fs, Fc, Fm} =
     GAModel{P, Fs, Fc, Fm}(ip, sel, co, mut)
 
-populationtype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = P
-genetype{P, Fs, Fc, Fm}(::GAModel{P, Fs, Fc, Fm}) = eltype(P)
+populationtype(::GAModel{P, Fs, Fc, Fm}) where {P, Fs, Fc, Fm} = P
+genetype(::GAModel{P, Fs, Fc, Fm}) where {P, Fs, Fc, Fm} = eltype(P)
 
 
 struct GASolution{P<:AbstractVector} <: AbstractEvolutionarySolution
@@ -84,18 +85,18 @@ function breed!(model, parents, selections, children)
     end
 end
 
-# iterator interface for evolver; for implementation, see
-# https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/blob/master/src/iterator_interface.jl
+# # iterator interface for evolver; for implementation, see
+# # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/blob/master/src/iterator_interface.jl
 
-import Base: start, next, done, eltype, iteratorsize, iteratoreltype
+# import Base: start, next, done, eltype, iteratorsize, iteratoreltype
 
-Base.start(evolver::GAEvolver) = 0
-Base.next(evolver::GAEvolver, state) = begin
-    state += 1
-    evolvestep!(evolver)
-    evolver, state
-end
-Base.done(::GAEvolver, state) = false
-Base.iteratorsize{T<:GAEvolver}(::Type{T}) = Base.IsInfinite()
-Base.iteratoreltype{T<:GAEvolver}(::Type{T}) = Base.HasEltype()
-Base.eltype{T<:GAEvolver}(::T) = T
+# Base.start(evolver::GAEvolver) = 0
+# Base.next(evolver::GAEvolver, state) = begin
+#     state += 1
+#     evolvestep!(evolver)
+#     evolver, state
+# end
+# Base.done(::GAEvolver, state) = false
+# Base.iteratorsize(::Type{<:GAEvolver}) = Base.IsInfinite() 
+# Base.iteratoreltype(::Type{<:GAEvolver}) = Base.HasEltype()
+# Base.eltype(::Type{T}) where {T<:GAEvolver} = T

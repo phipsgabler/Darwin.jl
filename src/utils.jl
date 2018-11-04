@@ -1,3 +1,5 @@
+export ParametrizedFunction
+
 struct TimeInfo
     time::Float64
     bytes::Int64
