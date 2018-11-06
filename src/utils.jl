@@ -9,14 +9,12 @@ end
 
 const notime = TimeInfo(0.0, 0, 0.0, Base.GC_Diff(0, 0, 0, 0, 0, 0, 0, 0, 0))
 
-
-mutable struct ParametrizedFunction <: Function
-    f
-    parameters::Vector
+macro timeinfo(expr)
+    quote
+        val , time, bytes, gctime, memallocs = @timed $(esc(expr))
+        val, TimeInfo(time, bytes, gctime, memallocs)
+    end
 end
-
-(pf::ParametrizedFunction)(x) = pf.f(x, pf.parameters...)
-
 
 # see https://github.com/JuliaLang/julia/blob/master/doc/src/devdocs/ast.md
 # using MacroTools

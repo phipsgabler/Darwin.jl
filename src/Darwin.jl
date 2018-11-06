@@ -1,18 +1,34 @@
 module Darwin
 
-
-export AbstractEvolutionaryModel,
-    AbstractEvolutionarySolution
-
-
 abstract type AbstractEvolutionaryModel end
 
-abstract type AbstractEvolutionarySolution end
+
+"""
+    populationtype(model)
+
+Type of population used in `model`.
+"""
+function populationtype end
+
+populationtype(t::AbstractEvolutionaryModel) = populationtype(typeof(t))
 
 
-function evolve end
+"""
+    populationtype(model)
+
+Type of genome (ie., individuals in population) used in `model`.
+"""
+function genotype end
+
+genotype(t::AbstractEvolutionaryModel) = genotype(typeof(t))
+
 
 include("utils.jl")
+include("selection.jl")
+include("mutation.jl")
+include("crossover.jl")
+include("fitness.jl")
+
 include("GA.jl")
 
 end # module

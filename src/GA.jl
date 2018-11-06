@@ -1,102 +1,67 @@
+import LearningStrategies: LearningStrategy, Verbose,
+    cleanup!, finished, hook, setup!, update!
+
 export GAModel, genetype, populationtype
 export evolve, init, evolvestep!
 
-struct GAModel{P<:AbstractVector, Fs, Fc, Fm} <: AbstractEvolutionaryModel
-    initial_population::P
-    selections::Fs
-    crossover::Fc
-    mutate!::Fm
+mutable struct GAModel{T,
+                       Fs<:SelectionStrategy,
+                       Fm<:MutationStrategy,
+                       Fc<:CrossoverStrategy} <: AbstractEvolutionaryModel
+    population::Vector{T}
+    selectionstrategy::Fs
+    mutationstrategy::Fm
+    crossoverstrategy::Fc
 end
 
-GAModel(ip::P, sel::Fs, co::Fc, mut::Fm) where {P, Fs, Fc, Fm} =
-    GAModel{P, Fs, Fc, Fm}(ip, sel, co, mut)
-
-populationtype(::GAModel{P, Fs, Fc, Fm}) where {P, Fs, Fc, Fm} = P
-genetype(::GAModel{P, Fs, Fc, Fm}) where {P, Fs, Fc, Fm} = eltype(P)
+populationtype(::Type{GAModel{T}}) where {T} = Vector{T}
+genotype(::Type{GAModel{T}}) where {T} = T
 
 
-struct GASolution{P<:AbstractVector} <: AbstractEvolutionarySolution
-    population::P
-    timeinfo::TimeInfo
-end
+mutable struct GAEvolver{T} <: LearningStrategy
+    generations::Int
+    childrencache::Vector{T}
 
-mutable struct GAEvolver{P<:AbstractVector, Fs, Fc, Fm}
-    model::GAModel{P, Fs, Fc, Fm}
-    generation::Int
-    solution::GASolution{P}
-    populationsize::Int
-    cumtime::Float64
-end
-
-GAEvolver(m::GAModel{P, Fs, Fc, Fm}, g, s::GASolution{P}) where {P, Fs, Fc, Fm} =
-    GAEvolver{P, Fs, Fc, Fm}(m, g, s, length(s.population), 0.0)
-
-function evolve(model::GAModel, generations::Int;
-                verbose = false,
-                callback = evaluator -> nothing)
-    @assert generations >= 1
-
-    evolver = init(model)
-    verbose && println("Starting with population of size ", evolver.populationsize)
-
-    for step in take(evolver, generations - 1)
-        callback(step)
-    end
-
-    verbose && println("Evolved ", evolver.generation, " generations in ",
-                evolver.cumtime, " seconds total, ",
-                "final population size ", length(evolver.solution.population))
-
-    return evolver.solution
-end
-
-function init(model::GAModel)
-    GAEvolver(model, 1, GASolution(model.initial_population, notime))
+    GAEvolver{T}(generations) where {T} = new{T}(generations)
 end
 
 
-function evolvestep!(evolver::GAEvolver)
-    parents = evolver.solution.population
-    selections = evolver.model.selections(parents)
-    children = similar(parents, 0)
-
-    if iteratorsize(selections) == Base.HasLength()
-        sizehint!(children, length(selections))
-    else
-        sizehint!(children, length(parents))
-    end
-
-    _, t, bytes, gctime, memallocs = @timed breed!(evolver.model, parents, selections, children)
-
-    evolver.solution = GASolution(children, TimeInfo(t, bytes, gctime, memallocs))
-    evolver.generation += 1
-    evolver.cumtime += t
-
-    evolver
+function setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
+    evolver.childrencache = similar(model.population)
+    setup!(model.selectionstrategy)
+    setup!(model.mutationstrategy)
+    setup!(model.crossoverstrategy)
 end
 
 
-function breed!(model, parents, selections, children)
-    child_type = eltype(children)
-    for selected in selections
-        offspring = model.crossover(parents[collect(Int, selected)])
-        model.mutate!.(offspring)
-        append!(children, collect(child_type, offspring))
-    end
+function update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
+    parents = evolver.population
+    selections = select(parents, model.selectionstrategy, i)
+    children = evolver.childrencache
+
+    # val, ti = @timeinfo breed!(evolver.model, parents, selections, children)
+
+    breed!(model, parents, selections, children, i)
+
+    # swap parents and children -- saves reallocations
+    model.population, evolver.childrencache = evolver.childrencache, model.population
+
+    model
 end
 
-# # iterator interface for evolver; for implementation, see
-# # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/blob/master/src/iterator_interface.jl
 
-# import Base: start, next, done, eltype, iteratorsize, iteratoreltype
+function breed!(model::GAModel, parents, selections, children, generation)
+    crossover!(children, view(parents, selections), model.crossoverstrategy, generation)
+    mutate!(children, model.mutationstrategy, generation)
+end
 
-# Base.start(evolver::GAEvolver) = 0
-# Base.next(evolver::GAEvolver, state) = begin
-#     state += 1
-#     evolvestep!(evolver)
-#     evolver, state
-# end
-# Base.done(::GAEvolver, state) = false
-# Base.iteratorsize(::Type{<:GAEvolver}) = Base.IsInfinite() 
-# Base.iteratoreltype(::Type{<:GAEvolver}) = Base.HasEltype()
-# Base.eltype(::Type{T}) where {T<:GAEvolver} = T
+
+finished(evolver::GAEvolver, model::GAModel, i) = i ≥ evolver.generations
+
+function finished(verbose_evolver::Verbose{<:GAEvolver}, model::GAModel, data, i)
+    done = finished(verbose_evolver.strategy, model, data, i)
+    done && @info ("Evolved ", i, " generations in ",
+                   "some time, ", #evolver.cumtime, " seconds total, ",
+                   "final population size ", length(model.population))
+    done
+end
