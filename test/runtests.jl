@@ -1,5 +1,5 @@
 using Darwin
 using Test
 
-# write your own tests here
-@test 1 == 2
+include("rosenbrock_test.jl")
+include("equality_test.jl")
