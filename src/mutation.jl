@@ -1,6 +1,10 @@
+export mutate!,
+    MutationStrategy,
+    setup!
+
 abstract type MutationStrategy end
 
-setup!(strategy::MutationStrategy) = strategy
+setup!(strategy::MutationStrategy, model) = strategy
 
 """
     mutate!(population, strategy[, generation]) -> population

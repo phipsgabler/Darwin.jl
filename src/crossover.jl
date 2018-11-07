@@ -1,13 +1,18 @@
+export crossover!,
+    CrossoverStrategy,
+    setup!
+
 abstract type CrossoverStrategy end
 
-setup!(strategy::CrossoverStrategy) = strategy
+setup!(strategy::CrossoverStrategy, model) = strategy
 
 """
-    crossover!(children, parents, strategy[, generation]) -> children
+    crossover!(children, parents, selection, strategy[, generation]) -> children
 
-Perform crossover on `parents`, and write the result to `children`.  Return the new `children`.
+Perform crossover on `parents[selection]`, and write the result to `children`.  Return the new
+`children`.
 """
-crossover!(children,  parents, ::CrossoverStrategy) = children .= population
-crossover!(children,  parents, strategy::CrossoverStrategy, generation) =
-    crossover!(children, parents, strategy)
+crossover!(children,  parents, selection, ::CrossoverStrategy) = children .= population
+crossover!(children,  parents, selection, strategy::CrossoverStrategy, generation) =
+    crossover!(children, parents, selection, strategy)
 

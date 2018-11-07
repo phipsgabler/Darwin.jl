@@ -1,15 +1,17 @@
-export select, SelectionStrategy
+export select,
+    SelectionStrategy,
+    setup!
 
 abstract type SelectionStrategy end
 
-setup!(strategy::SelectionStrategy) = strategy
+setup!(strategy::SelectionStrategy, model) = strategy
 
 """
-    select(population, strategy[, generation]) -> indices
+    selection(population, strategy[, generation]) -> indices
 
-Select indices of population to be used in breeding.  Should compare fitnesses using `isless`, 
+Select parts of population to be used in breeding.  Should compare fitnesses using `isless`, 
 if that is relevant.
 """
-select(population, ::SelectionStrategy) = eachindex(population)
-select(population, strategy::SelectionStrategy, generation) = select(population, strategy)
+selection(population, ::SelectionStrategy) = eachindex(population)
+selection(population, strategy::SelectionStrategy, generation) = selection(population, strategy)
 

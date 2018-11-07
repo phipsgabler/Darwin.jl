@@ -1,9 +1,12 @@
 using Darwin
-using Distributions
-import Base: rand
+import Darwin: selection, setup!, mutate!, crossover!
+
+using LearningStrategies: learn!, Verbose
+
+import Random: AbstractRNG, rand, SamplerType
 
 # This example is taken from Westley Argentum:
-# https://github.com/WestleyArgentum/GeneticAlgorithms.jl/README.md
+# https://github.com/WestleyArgentum/GeneticAlgorithms.jl
 
 struct EqualityMonster
     # a + 2b + 3c + 4d + 5e = 42
@@ -12,56 +15,65 @@ end
 
 EqualityMonster() = EqualityMonster(Vector{Int}(5))
 
-Base.rand(rng::AbstractRNG, ::Type{EqualityMonster}) = EqualityMonster(rand(rng, 0:42, 5))
+rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rng, 0:42, 5))
+
 
 function fitness(ent::EqualityMonster)
     # we want the expression `a + 2b + 3c + 4d + 5e - 42`
     # to be as close to 0 as possible
-    score = dot(ent.abcde, 1:5)
+    score = sum(ent.abcde .* (1:5))
     1 / abs(score - 42)
 end
 
-function selections(population::Vector{EqualityMonster})
-    fittest = indmax(fitness(e) for e in population)
-    M = length(population) ÷ 2
-    [(fittest, rand(indices(population, 1))) for _ in 1:M]
+
+struct EMSelection <: SelectionStrategy end
+
+function selection(population, ::EMSelection)
+    # simple naive groupings that pair the best entitiy with every other
+    fittest = argmax(fitness.(population))
+    Iterators.repeated(fittest, length(population)), eachindex(population)
 end
 
-function crossover(parents::Vector{EqualityMonster})
-    ent1, ent2 = tuple(parents...)
 
+struct EMCrossover <: CrossoverStrategy end
+
+function crossover!(children, parents, selection, ::EMCrossover)
     # grab each element from a random parent
-    child1, child2 = EqualityMonster(), EqualityMonster()
-    crossover_points = rand(Bool, 5)
-    child1.abcde[crossover_points] .= view(ent1.abcde, crossover_points)
-    child1.abcde[.~crossover_points] .= view(ent2.abcde, .~crossover_points)
-    child2.abcde[crossover_points] .= view(ent2.abcde, crossover_points)
-    child2.abcde[.~crossover_points] .= view(ent1.abcde, .~crossover_points)
+    for (i, p1, p2) in zip(eachindex(children), selection...)
+        crossover_points = rand(Bool, 5)
+        abcde = similar(parents[p1].abcde)
+        abcde[crossover_points] = parents[p1].abcde[crossover_points]
+        abcde[.~crossover_points] = parents[p2].abcde[.~crossover_points]
 
-    child1, child2
-end
-
-function mutate!(ent::EqualityMonster)
-    # let's go crazy and mutate 20% of the time
-    if rand() < 0.2
-        rand_element = rand(1:5)
-        ent.abcde[rand_element] = rand(0:42)
+        children[i] = EqualityMonster(abcde)
     end
+
+    children
 end
 
-function callback(evaluator)
-    if evaluator.generation % 10 == 0
-        println("Generation ", evaluator.generation,
-                ", time: ", evaluator.solution.timeinfo.time)
+
+struct EMMutation <: MutationStrategy
+    p::Float64
+end
+
+function mutate!(children, strat::EMMutation)
+    for i in eachindex(children)
+        if rand() < strat.p
+            children[i].abcde[rand(1:5)] = rand(0:42)
+        end
     end
+
+    children
 end
 
+initial_population = rand(EqualityMonster, 64)
 
-initial_population = rand(EqualityMonster, 16)
-model = GAModel(initial_population, selections, crossover, mutate!)
-# println(model)
+# let's go crazy and mutate 20% of the time
+model = GAModel(initial_population, EMSelection(), EMCrossover(), EMMutation(0.2))
 
-result = evolve(model, 100; verbose = true, callback = callback)
-sample = rand(result.population, 5)
-@show sample
-@show fitness.(sample)
+result = learn!(model, Verbose(GAEvolver{EqualityMonster}(200)))
+partialsort!(result.population, 1:5, by = fitness, rev = true)
+@test isinf(fitness(result.population[1]))
+
+# @show sample
+# @show fitness.(sample)

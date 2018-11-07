@@ -1,24 +1,25 @@
-import LearningStrategies: LearningStrategy, Verbose,
-    cleanup!, finished, hook, setup!, update!
+import LearningStrategies
+const L = LearningStrategies
+# import LearningStrategies: LearningStrategy, Verbose,
+    # cleanup!, finished, hook, update!
 
-export GAModel, genetype, populationtype
-export evolve, init, evolvestep!
+export GAEvolver, GAModel
 
 mutable struct GAModel{T,
                        Fs<:SelectionStrategy,
-                       Fm<:MutationStrategy,
-                       Fc<:CrossoverStrategy} <: AbstractEvolutionaryModel
+                       Fc<:CrossoverStrategy,
+                       Fm<:MutationStrategy} <: AbstractEvolutionaryModel
     population::Vector{T}
     selectionstrategy::Fs
-    mutationstrategy::Fm
     crossoverstrategy::Fc
+    mutationstrategy::Fm
 end
 
 populationtype(::Type{GAModel{T}}) where {T} = Vector{T}
 genotype(::Type{GAModel{T}}) where {T} = T
 
 
-mutable struct GAEvolver{T} <: LearningStrategy
+mutable struct GAEvolver{T} <: L.LearningStrategy
     generations::Int
     childrencache::Vector{T}
 
@@ -26,22 +27,22 @@ mutable struct GAEvolver{T} <: LearningStrategy
 end
 
 
-function setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
+function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
     evolver.childrencache = similar(model.population)
-    setup!(model.selectionstrategy)
-    setup!(model.mutationstrategy)
-    setup!(model.crossoverstrategy)
+    setup!(model.selectionstrategy, model)
+    setup!(model.mutationstrategy, model)
+    setup!(model.crossoverstrategy, model)
 end
 
 
-function update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
-    parents = evolver.population
-    selections = select(parents, model.selectionstrategy, i)
+function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
+    parents = model.population
+    parent_selection = selection(parents, model.selectionstrategy, i)
     children = evolver.childrencache
 
     # val, ti = @timeinfo breed!(evolver.model, parents, selections, children)
 
-    breed!(model, parents, selections, children, i)
+    breed!(model, parents, parent_selection, children, i)
 
     # swap parents and children -- saves reallocations
     model.population, evolver.childrencache = evolver.childrencache, model.population
@@ -50,18 +51,16 @@ function update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
 end
 
 
-function breed!(model::GAModel, parents, selections, children, generation)
-    crossover!(children, view(parents, selections), model.crossoverstrategy, generation)
+function breed!(model::GAModel, parents, selection, children, generation)
+    crossover!(children, parents, selection, model.crossoverstrategy, generation)
     mutate!(children, model.mutationstrategy, generation)
 end
 
 
-finished(evolver::GAEvolver, model::GAModel, i) = i ≥ evolver.generations
+L.finished(evolver::GAEvolver, model::GAModel, i) = i ≥ evolver.generations
 
-function finished(verbose_evolver::Verbose{<:GAEvolver}, model::GAModel, data, i)
-    done = finished(verbose_evolver.strategy, model, data, i)
-    done && @info ("Evolved ", i, " generations in ",
-                   "some time, ", #evolver.cumtime, " seconds total, ",
-                   "final population size ", length(model.population))
+function L.finished(verbose_evolver::L.Verbose{<:GAEvolver}, model::GAModel, data, i)
+    done = L.finished(verbose_evolver.strategy, model, data, i)
+    done && @info "Evolved $i generations in some time, final population size $(length(model.population))"
     done
 end
