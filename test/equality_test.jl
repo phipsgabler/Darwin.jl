@@ -72,8 +72,11 @@ initial_population = rand(EqualityMonster, 64)
 model = GAModel(initial_population, EMSelection(), EMCrossover(), EMMutation(0.2))
 
 result = learn!(model, Verbose(GAEvolver{EqualityMonster}(200)))
-partialsort!(result.population, 1:5, by = fitness, rev = true)
-@test isinf(fitness(result.population[1]))
 
-# @show sample
-# @show fitness.(sample)
+
+@testset "EqualityMonster" begin
+    fittest = result.population[argmax(fitness.(result.population))]
+    # @test isinf(fitness(result.population[fittest]))
+    @test sum(fittest.abcde .* (1:5)) == 42
+end
+

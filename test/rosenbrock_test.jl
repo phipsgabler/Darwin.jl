@@ -99,10 +99,13 @@ model = GAModel(initial_population, RosenbrockSelection(1.0),
 
 result = learn!(model, Verbose(GAEvolver{Entity}(8000)))
 
-fittest = argmax(fitness.(result.population))
-@test isapprox(rosenbrock(result.population[fittest]), 0.0, atol = 0.01)
-# @show result.population[fittest]
-@test all(isapprox.(result.population[fittest], [1.0, 1.0], atol = 0.1))
+
+@testset "Rosenbrock" begin
+    fittest = argmax(fitness.(result.population))
+    @test isapprox(rosenbrock(result.population[fittest]), 0.0, atol = 0.01)
+    # @show result.population[fittest]
+    @test all(isapprox.(result.population[fittest], [1.0, 1.0], atol = 0.1))
+end
 
 
 # function list: https://www.sfu.ca/~ssurjano/optimization.html
