@@ -1,68 +1,108 @@
 using Darwin
+import Darwin: selection, setup!, mutate!, crossover!
+
 using Distributions
 
+using LearningStrategies: learn!, Verbose
+
+
 const Entity = Vector{Float64}
-const Population = Vector{Entity}
 
 # https://en.wikipedia.org/wiki/Himmelblau%27s_function
 rosenbrock(x::Entity; a = 1, b = 100) = (a - x[1])^2 + b * (x[2] - x[1]^2)^2
-const bounds = (-2.0, 2.0)
+const Bounds = Uniform(-2.0, 2.0)
 # minimum 0 at [a, a²]
 
 fitness(x::Entity) = -rosenbrock(x)
 
-@inline function softmax(x)
+function softmax(x)
     exps = exp.(x)
     exps ./= sum(exps)
     return exps
 end
 
-function _selections(population::Population, selection_temperature)
+
+mutable struct RosenbrockSelection <: SelectionStrategy
+    temperature::Float64
+end
+
+function selection(population, strat::RosenbrockSelection, generation)
     # softmax selection
-    probabilities = softmax(fitness.(population) ./ selection_temperature)
+    probabilities = softmax(fitness.(population) ./ strat.temperature)
     M = length(population) ÷ 2
-    [rand(Categorical(probabilities), 2) for _ in 1:M]
-end
-selections = ParametrizedFunction(_selections, [1.0])
+    D = Categorical(probabilities)
 
-function _crossover(parents::Vector{Entity}, crossover_rate)
+    # tempering
+    if strat.temperature ≥ 0.15
+        strat.temperature *= 0.99
+    end
+    
+    rand(D, M), rand(D, M)
+end
+
+
+mutable struct RosenbrockCrossover <: CrossoverStrategy
+    rate::Float64
+end
+
+function crossover!(children, parents, selection, strat::RosenbrockCrossover, generation)
     # arithmetic crossover
-    if rand() < crossover_rate
-        mixing = rand()
-        return [(1 - mixing) * parents[1] + mixing * parents[2],
-                (1 - mixing) * parents[2] + mixing * parents[1]]
-    else
-        return parents
+    CI = Iterators.partition(eachindex(children), 2)
+    
+    for (ci, p1, p2) in zip(CI, selection...)
+        if rand() < strat.rate
+            mixing = rand()
+            children[ci] .= [(1 - mixing) .* parents[p1] .+ mixing .* parents[p2],
+                             (1 - mixing) .* parents[p2] .+ mixing .* parents[p1]]
+        else
+            children[ci] .= [parents[p1], parents[p2]]
+        end
     end
-end
-crossover = ParametrizedFunction(_crossover, [0.7])
 
-function _mutate!(x::Entity, mutation_rate)
+    children
+end
+
+
+mutable struct RosenbrockMutation <: MutationStrategy
+    rate::Float64
+end
+
+function mutate!(children, strat::RosenbrockMutation, generation)
     # uniform mutation of each component separately
-    (rand() < mutation_rate) && (x[1] = rand(Uniform(bounds...)))
-    (rand() < mutation_rate) && (x[2] = rand(Uniform(bounds...)))
-end
-mutate! = ParametrizedFunction(_mutate!, [0.3])
-
-function callback(evolver)
-    (evolver.model.selections.parameters[1] > 0.15) &&
-        (evolver.model.selections.parameters[1] *= 0.99)
-    if evolver.generation % 1000 == 0
-        evolver.model.mutate!.parameters[1] *= 0.9
-        println("Maximum fitness at generation ", evolver.generation,
-                ": ", maximum(fitness.(evolver.solution.population)))
+    for child in children
+        (rand() < strat.rate) && (child[1] = rand(Bounds))
+        (rand() < strat.rate) && (child[2] = rand(Bounds))
     end
+
+    if generation % 1000 == 0
+        strat.rate *= 0.9
+    end
+    
+    children
 end
+
+# function callback(evolver)
+#     (evolver.model.selections.parameters[1] > 0.15) &&
+#         (evolver.model.selections.parameters[1] *= 0.99)
+#     if evolver.generation % 1000 == 0
+#         evolver.model.mutate!.parameters[1] *= 0.9
+#         println("Maximum fitness at generation ", evolver.generation,
+#                 ": ", maximum(fitness.(evolver.solution.population)))
+#     end
+# end
 
 
 const N = 128
-initial_population = [rand(Uniform(bounds...), 2) for _ in 1:N]
-model = GAModel(initial_population, selections, crossover, mutate!)
+initial_population = [rand(Bounds, 2) for _ in 1:N]
+model = GAModel(initial_population, RosenbrockSelection(1.0),
+                RosenbrockCrossover(0.7), RosenbrockMutation(0.3))
 
-result = evolve(model, 5000; verbose = true, callback = callback)
-sample = rand(result.population, 10)
-@show sample
-@show fitness.(sample)
+result = learn!(model, Verbose(GAEvolver{Entity}(8000)))
+
+fittest = argmax(fitness.(result.population))
+@test isapprox(rosenbrock(result.population[fittest]), 0.0, atol = 0.01)
+# @show result.population[fittest]
+@test all(isapprox.(result.population[fittest], [1.0, 1.0], atol = 0.1))
 
 
 # function list: https://www.sfu.ca/~ssurjano/optimization.html
