@@ -1,7 +1,5 @@
 import LearningStrategies
 const L = LearningStrategies
-# import LearningStrategies: LearningStrategy, Verbose,
-    # cleanup!, finished, hook, update!
 
 export GAEvolver, GAModel
 
