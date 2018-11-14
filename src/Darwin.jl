@@ -24,10 +24,10 @@ genotype(t::AbstractEvolutionaryModel) = genotype(typeof(t))
 
 
 include("utils.jl")
+include("fitness.jl")
 include("selection.jl")
 include("mutation.jl")
 include("crossover.jl")
-include("fitness.jl")
 
 include("GA.jl")
 
