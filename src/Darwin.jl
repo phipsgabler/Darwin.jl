@@ -1,29 +1,16 @@
 module Darwin
 
+export AbstractEvolutionaryModel,
+    FitnessValue
+
+
 abstract type AbstractEvolutionaryModel end
 
-
-"""
-    populationtype(model)
-
-Type of population used in `model`.
-"""
-function populationtype end
-
-populationtype(t::AbstractEvolutionaryModel) = populationtype(typeof(t))
-
-
-"""
-    populationtype(model)
-
-Type of genome (ie., individuals in population) used in `model`.
-"""
-function genotype end
-
-genotype(t::AbstractEvolutionaryModel) = genotype(typeof(t))
+const FitnessValue = Float64
 
 
 include("utils.jl")
+include("individual.jl")
 include("fitness.jl")
 include("selection.jl")
 include("mutation.jl")

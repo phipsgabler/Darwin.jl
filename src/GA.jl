@@ -3,62 +3,63 @@ const L = LearningStrategies
 
 export GAEvolver, GAModel
 
-mutable struct GAModel{T,
-                       Fs<:SelectionStrategy,
-                       Fc<:CrossoverStrategy,
-                       Fm<:MutationStrategy} <: AbstractEvolutionaryModel
-    population::Vector{T}
+mutable struct GAModel{T, S,
+                       F<:AbstractFitness{>:T},
+                       Fs<:SelectionStrategy{<:S},
+                       Fc<:CrossoverStrategy{>:S},
+                       Fm<:MutationStrategy{T}} <: AbstractEvolutionaryModel
+    population::Vector{Individual{T}}
+    best::Union{Individual{T}, Nothing}
+    fitness::F
     selectionstrategy::Fs
     crossoverstrategy::Fc
     mutationstrategy::Fm
 end
 
-populationtype(::Type{GAModel{T}}) where {T} = Vector{T}
-genotype(::Type{GAModel{T}}) where {T} = T
+GAModel(p, f, s, c, m) = GAModel(p, nothing, f, s, c, m)
 
 
 mutable struct GAEvolver{T} <: L.LearningStrategy
-    generations::Int
-    childrencache::Vector{T}
+    cache::Vector{Individual{T}}
 
-    GAEvolver{T}(generations) where {T} = new{T}(generations)
+    GAEvolver{T}() where {T} = new{T}(Vector{Individual{T}}())
 end
 
 
+preparecache!(cache::AbstractArray, n::Integer) = sizehint!(empty!(cache), n)
+
+
 function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
-    evolver.childrencache = similar(model.population)
     setup!(model.selectionstrategy, model)
     setup!(model.mutationstrategy, model)
     setup!(model.crossoverstrategy, model)
+    
+    model.best = maximumby(i -> assess!(i, model.fitness), model.population)
 end
 
 
 function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
-    parents = model.population
-    parent_selection = selection(parents, model.selectionstrategy, i)
-    children = evolver.childrencache
+    preparecache!(evolver.cache, length(model.population))
 
-    # val, ti = @timeinfo breed!(evolver.model, parents, selections, children)
-
-    breed!(model, parents, parent_selection, children, i)
+    # TODO: log timing information
+    for parents in selection(model, i)
+        # TODO: make this loop @generated for NTuples
+        for child in [crossover(copy.(parents), model.crossoverstrategy, i);]
+            push!(evolver.cache, mutate!(child, model.mutationstrategy, i))
+        end
+    end
 
     # swap parents and children -- saves reallocations
-    model.population, evolver.childrencache = evolver.childrencache, model.population
+    model.population, evolver.cache = evolver.cache, model.population
+
+    model.best = maximumby(i -> assess!(i, model.fitness), model.population)
 
     model
 end
 
 
-function breed!(model::GAModel, parents, selection, children, generation)
-    crossover!(children, parents, selection, model.crossoverstrategy, generation)
-    mutate!(children, model.mutationstrategy, generation)
-end
-
-
-L.finished(evolver::GAEvolver, model::GAModel, i) = i ≥ evolver.generations
-
 function L.finished(verbose_evolver::L.Verbose{<:GAEvolver}, model::GAModel, data, i)
     done = L.finished(verbose_evolver.strategy, model, data, i)
-    done && @info "Evolved $i generations in some time, final population size $(length(model.population))"
+    done && @info "Evolved $i generations, final population size $(length(model.population))"
     done
 end

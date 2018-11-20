@@ -2,8 +2,6 @@ import Distributions
 const D = Distributions
 import Base: +
 
-export ParametrizedFunction
-
 struct TimeInfo
     time::Float64
     bytes::Int64
@@ -20,7 +18,9 @@ macro timeinfo(expr)
     end
 end
 
-maximumby(f, collection) = collection[argmax(f(x) for x in collection)]
+maximumby(f, collection) = mapreduce(x -> (v=x, f=f(x)),
+                                     (a, b) -> ifelse(isless(b.f, a.f), a, b),
+                                     collection).v
 
 # see https://github.com/JuliaLang/julia/blob/master/doc/src/devdocs/ast.md
 # using MacroTools
