@@ -43,9 +43,12 @@ function crossover(parents::Selection, ::EMCrossover)
     # grab each element from a random parent
     crossover_points = rand(Bool, 5)
     result = EqualityMonster()
-    result.abcde[crossover_points] .= parents[1].genome.abcde[crossover_points]
-    result.abcde[.~crossover_points] .= parents[2].genome.abcde[.~crossover_points]
-
+    
+    ongenome(parents[1], parents[2]) do g1, g2
+        result.abcde[crossover_points] .= g1.abcde[crossover_points]
+        result.abcde[.~crossover_points] .= g2.abcde[.~crossover_points]
+    end
+    
     Individual(result)
 end
 
@@ -73,7 +76,6 @@ result = learn!(model, strat)
 
 @testset "EqualityMonster" begin
     # @test isinf(fitness(result.population[fittest]))
-    println(result.population)
     @test sum(result.best.genome.abcde .* (1:5)) == 42
 end
 
