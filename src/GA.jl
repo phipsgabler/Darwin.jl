@@ -26,9 +26,6 @@ mutable struct GAEvolver{T} <: L.LearningStrategy
 end
 
 
-preparecache!(cache::AbstractArray, n::Integer) = sizehint!(empty!(cache), n)
-
-
 function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
     setup!(model.selectionstrategy, model)
     setup!(model.mutationstrategy, model)
@@ -37,6 +34,8 @@ function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
     model.best = maximumby(i -> assess!(i, model.fitness), model.population)
 end
 
+
+preparecache!(cache::AbstractArray, n::Integer) = sizehint!(empty!(cache), n)
 
 function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
     preparecache!(evolver.cache, length(model.population))
