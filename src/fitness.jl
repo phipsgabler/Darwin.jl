@@ -44,10 +44,10 @@ macro fitness(fundef::Expr)
 
     fname = def[:name]
     def[:name] = gensym(def[:name])
-    # def[:args] = [combinearg(argname, esc(argtype), slurp, default)]
     fun = combinedef(def)
+    @esc fname argtype fun
     
-    return @q const $(esc(fname)) = FitnessFunction{$(esc(argtype))}($(esc(fun)))
+    return @q const $fname = FitnessFunction{$argtype}($fun)
 end
 
 
