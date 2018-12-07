@@ -5,6 +5,7 @@ export Individual,
     ongenome,
     Population
 
+
 mutable struct Individual{G}
     genome::G
     fitnessvalue::Union{FitnessValue, Nothing}

@@ -38,7 +38,7 @@ function setup!(strategy::PairWithBestSelection{T}, model::AbstractEvolutionaryM
     strategy
 end
 
-function selection(population::AbstractVector{Individual{T}}, strat::PairWithBestSelection{T}) where {T}
+function selection(population::Population{T}, strat::PairWithBestSelection{T}) where {T}
     # simple naive groupings that pair the best entitiy with every other
     Iterators.zip(Iterators.repeated(findfittest(strat.model), length(population)), population)
 end

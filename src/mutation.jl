@@ -43,7 +43,7 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
 end
 
 
-mutable struct UniformMutation{T<:Real} <: MutationStrategy{AbstractVector{T}}
+struct UniformMutation{T<:Real} <: MutationStrategy{AbstractVector{T}}
     rate::Float64
     bounds::Uniform{T}
 
@@ -60,34 +60,30 @@ function mutate!(genome::AbstractVector{T}, strat::UniformMutation{T}) where {T}
         (rand() < strat.rate) && (genome[i] = rand(strat.bounds))
     end
 
-    # if generation % 1000 == 0
-        # strat.rate *= 0.9
-    # end
-    
     genome
 end
 
 
 struct BoundedConvolution{T<:Real} <: MutationStrategy{AbstractVector{T}}
-    p::Float64
+    rate::Float64
     tweak::Distribution{T}
     min::T
     max::T
 
-    function BoundedConvolution(p, tweak::Distribution{T}, min, max) where T
+    function BoundedConvolution(rate, tweak::Distribution{T}, min, max) where T
         @assert mean(tweak) == zero(T) "`tweak` should have zero mean!"
         TT = promote_type(typeof(min), typeof(max), T)
-        new{TT}(convert(Float64, p), r, convert(TT, min), convert(TT, max))
+        new{TT}(convert(Float64, rate), r, convert(TT, min), convert(TT, max))
     end
 end
 
 function mutate!(genome::AbstractVector{T}, strat::BoundedConvolution{T}) where {T<:Real}
     for i in eachindex(genome)
-        if rand() ≤ strat.p
+        if rand() ≤ strat.rate
             genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
         end
     end
 end
 
-BoundedUniformConvolution(p, r, min, max) = BoundedConvolution(p, Uniform(-r, r), min, max)
-BoundedGaussianConvolution(p, σ, min, max) = BoundedConvolution(p, Normal(0, σ), min, max)
+BoundedUniformConvolution(rate, r, min, max) = BoundedConvolution(rate, Uniform(-r, r), min, max)
+BoundedGaussianConvolution(rate, σ, min, max) = BoundedConvolution(rate, Normal(0, σ), min, max)

@@ -18,7 +18,7 @@ crossover(parents::S,  strategy::CrossoverStrategy{S}, generation) where {S} =
     crossover(parents, strategy)
 
 
-struct ArithmeticCrossover{T} <: CrossoverStrategy{NTuple{<:AbstractArray, 2}}
+struct ArithmeticCrossover{T} <: CrossoverStrategy{NTuple{<:AbstractArray{<:Real}, 2}}
     rate::Float64
 end
 

@@ -22,6 +22,7 @@ findfittest!(model::GAModel) = model.fittest = maximumby(i -> assess!(i, model.f
                                                          model.population)
 findfittest(model::GAModel) = model.fittest
 
+
 mutable struct GAEvolver{T} <: L.LearningStrategy
     cache::Population{T}
 
@@ -32,6 +33,7 @@ preparecache!(evolver::GAEvolver, n) = sizehint!(empty!(evolver.cache), n)
 
 
 function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
+    # setup!(model.fitness, model)
     setup!(model.selectionstrategy, model)
     setup!(model.mutationstrategy, model)
     setup!(model.crossoverstrategy, model)
