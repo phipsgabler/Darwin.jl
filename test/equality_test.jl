@@ -1,5 +1,6 @@
 using Darwin
-import Darwin: crossover, mutate!, selection, setup!
+import Darwin: crossover, mutate!, selection, setup!,
+    PairWithBestSelection
 
 using LearningStrategies: learn!, MaxIter, strategy, Verbose
 
@@ -20,26 +21,20 @@ copy(m::EqualityMonster) = EqualityMonster(copy(m.abcde))
 rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rng, 0:42, 5))
 
 
-fitness = FitnessFunction{EqualityMonster}(function (ent::EqualityMonster)
+const fitness = FitnessFunction{EqualityMonster}() do ent::EqualityMonster
     # we want the expression `a + 2b + 3c + 4d + 5e - 42`
     # to be as close to 0 as possible
     score = sum(ent.abcde .* (1:5))
     1 / abs(score - 42)
-end)
-
-
-const Selection = Tuple{Individual{EqualityMonster}, Individual{EqualityMonster}}
-struct EMSelection <: SelectionStrategy{Selection} end
-
-function selection(model::GAModel{T, Selection, F, EMSelection, Fc, Fm}) where {T, F, Fc, Fm}
-    # simple naive groupings that pair the best entitiy with every other
-    Iterators.zip(Iterators.repeated(model.best, length(model.population)), model.population)
 end
 
 
-struct EMCrossover <: CrossoverStrategy{Selection} end
+const SelectionResult = NTuple{2, Individual{EqualityMonster}}
+const EMSelection = PairWithBestSelection{EqualityMonster}
 
-function crossover(parents::Selection, ::EMCrossover)
+struct EMCrossover <: CrossoverStrategy{SelectionResult} end
+
+function crossover(parents::SelectionResult, ::EMCrossover)
     # grab each element from a random parent
     crossover_points = rand(Bool, 5)
     result = EqualityMonster()
@@ -76,6 +71,6 @@ result = learn!(model, strat)
 
 @testset "EqualityMonster" begin
     # @test isinf(fitness(result.population[fittest]))
-    @test sum(result.best.genome.abcde .* (1:5)) == 42
+    @test sum(result.fittest.genome.abcde .* (1:5)) == 42
 end
 

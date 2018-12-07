@@ -1,7 +1,9 @@
 import Base: copy
 import Random: AbstractRNG, rand, SamplerType
 
-export Individual, ongenome
+export Individual,
+    ongenome,
+    Population
 
 mutable struct Individual{G}
     genome::G
@@ -34,3 +36,6 @@ function ongenome(f, i::Individual, is::Vararg{Individual, N}) where {N}
         f(getfield.((i, is...), :genome)...)
     end
 end
+
+
+const Population{T} = Vector{Individual{T}}

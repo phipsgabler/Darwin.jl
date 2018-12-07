@@ -3,6 +3,12 @@ using Distributions
 export mutate!,
     MutationStrategy,
     setup!
+    
+export BitFlip,
+    BoundedConvolution,
+    BoundedGaussianConvolution,
+    BoundedUniformConvolution,
+    UniformMutation
 
 abstract type MutationStrategy{G} end
 
@@ -34,6 +40,31 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
             genome[i] = !genome[i]
         end
     end
+end
+
+
+mutable struct UniformMutation{T<:Real} <: MutationStrategy{AbstractVector{T}}
+    rate::Float64
+    bounds::Uniform{T}
+
+    function UniformMutation(rate, l, u)
+        U = promote_type(l, u)
+        new{U}(rate, Uniform{U}(l, u))
+    end
+    
+    UniformMutation(rate, bounds::Uniform{T}) where T = new{T}(rate, bounds)
+end
+
+function mutate!(genome::AbstractVector{T}, strat::UniformMutation{T}) where {T}
+    for i in eachindex(genome)
+        (rand() < strat.rate) && (genome[i] = rand(strat.bounds))
+    end
+
+    # if generation % 1000 == 0
+        # strat.rate *= 0.9
+    # end
+    
+    genome
 end
 
 

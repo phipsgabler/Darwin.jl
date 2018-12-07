@@ -8,8 +8,8 @@ mutable struct GAModel{T, S,
                        Fs<:SelectionStrategy{<:S},
                        Fc<:CrossoverStrategy{>:S},
                        Fm<:MutationStrategy{T}} <: AbstractEvolutionaryModel
-    population::Vector{Individual{T}}
-    best::Union{Individual{T}, Nothing}
+    population::Population{T}
+    fittest::Union{Individual{T}, Nothing}
     fitness::F
     selectionstrategy::Fs
     crossoverstrategy::Fc
@@ -18,31 +18,32 @@ end
 
 GAModel(p, f, s, c, m) = GAModel(p, nothing, f, s, c, m)
 
+findfittest!(model::GAModel) = model.fittest = maximumby(i -> assess!(i, model.fitness),
+                                                         model.population)
+findfittest(model::GAModel) = model.fittest
 
 mutable struct GAEvolver{T} <: L.LearningStrategy
-    cache::Vector{Individual{T}}
+    cache::Population{T}
 
-    GAEvolver{T}() where {T} = new{T}(Vector{Individual{T}}())
+    GAEvolver{T}() where {T} = new{T}(Population{T}())
 end
+
+preparecache!(evolver::GAEvolver, n) = sizehint!(empty!(evolver.cache), n)
 
 
 function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
     setup!(model.selectionstrategy, model)
     setup!(model.mutationstrategy, model)
     setup!(model.crossoverstrategy, model)
-    
-    model.best = maximumby(i -> assess!(i, model.fitness), model.population)
+    findfittest!(model)
 end
 
 
-preparecache!(cache::AbstractArray, n::Integer) = sizehint!(empty!(cache), n)
-
 function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
-    preparecache!(evolver.cache, length(model.population))
+    preparecache!(evolver, length(model.population))
 
     # TODO: log timing information
-    for parents in selection(model, i)
-        # TODO: make this loop @generated for NTuples
+    for parents in selection(model.population, model.selectionstrategy, i)
         for child in [crossover(copy.(parents), model.crossoverstrategy, i);]
             push!(evolver.cache, mutate!(child, model.mutationstrategy, i))
         end
@@ -51,7 +52,7 @@ function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
     # swap parents and children -- saves reallocations
     model.population, evolver.cache = evolver.cache, model.population
 
-    model.best = maximumby(i -> assess!(i, model.fitness), model.population)
+    findfittest!(model)
 
     model
 end

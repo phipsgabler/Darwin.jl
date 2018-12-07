@@ -2,26 +2,43 @@ export select,
     SelectionStrategy,
     setup!
 
+export PairWithBestSelection
+
+
 abstract type SelectionStrategy{S} end
 
 setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
 
 """
-    selection(model[, generation]) -> selection
+    selection(population, strategy[, generation]) -> selection
 
-Select parts of population of the model to be used in breeding.  Should compare fitnesses using 
+Select parts of population of a population to be used in breeding.  Should compare fitnesses using 
 `isless`, if that is relevant.
 """
-selection(model::AbstractEvolutionaryModel, generation) = selection(model)
+selection(population, strategy, generation) = selection(population, strategy)
 # selection(model::AbstractEvolutionaryModel, generation) = selection(model.population, model.strategy, generation)
 
 
 
-# struct TruncationSelection{μ, F<:AbstractFitness} <: SelectionStrategy{AbstractVector}
-#     fitness::F
+# struct TruncationSelection{μ} <: SelectionStrategy{AbstractVector{T}} end
+
+# function selection(model::GAModel{T, <:AbstractVector{T},
+#                                   F, TruncationSelection{T, μ}, Fc, Fm}) where {T, F, μ, Fc, Fm}
+#     partialsortperm(model.population, 1:μ, by = assess!, rev = true)
 # end
 
-# function selection(population::AbstractVector, strat::TruncationSelection{μ},
-#                    generation::Integer) where {μ}
-#     partialsortperm(population, 1:μ, by = assess!, rev = true)
-# end
+mutable struct PairWithBestSelection{T} <: SelectionStrategy{NTuple{2, Individual{T}}}
+    model::AbstractEvolutionaryModel
+
+    PairWithBestSelection{T}() where T = new{T}()
+end
+
+function setup!(strategy::PairWithBestSelection{T}, model::AbstractEvolutionaryModel) where {T} 
+    strategy.model = model
+    strategy
+end
+
+function selection(population::AbstractVector{Individual{T}}, strat::PairWithBestSelection{T}) where {T}
+    # simple naive groupings that pair the best entitiy with every other
+    Iterators.zip(Iterators.repeated(findfittest(strat.model), length(population)), population)
+end
