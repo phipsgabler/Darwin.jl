@@ -21,7 +21,7 @@ copy(m::EqualityMonster) = EqualityMonster(copy(m.abcde))
 rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rng, 0:42, 5))
 
 
-const fitness = FitnessFunction{EqualityMonster}() do ent::EqualityMonster
+@fitness function fitness(ent::EqualityMonster)
     # we want the expression `a + 2b + 3c + 4d + 5e - 42`
     # to be as close to 0 as possible
     score = sum(ent.abcde .* (1:5))

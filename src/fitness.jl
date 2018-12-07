@@ -1,6 +1,9 @@
+using MacroTools
+import MacroTools: @q, combinearg, combinedef
+
 export assess!,
     AbstractFitness,
-    # @fitness,
+    @fitness,
     FitnessFunction,
     setup!
 
@@ -33,9 +36,19 @@ end
 (f::FitnessFunction{T})(genome::T) where {T} = f.evaluate(genome)
 
 
-# macro fitness(fundef)
-    # :(FitnessFunction{$(<gettype(fundef)>)}($(esc(fundef))))
-# end
+
+macro fitness(fundef::Expr)
+    def = splitdef(fundef)
+    @assert (length(def[:args]) == 1) "Only single argument functions allowed!"
+    argname, argtype, slurp, default = splitarg(def[:args][1])
+
+    fname = def[:name]
+    def[:name] = gensym(def[:name])
+    # def[:args] = [combinearg(argname, esc(argtype), slurp, default)]
+    fun = combinedef(def)
+    
+    return @q const $(esc(fname)) = FitnessFunction{$(esc(argtype))}($(esc(fun)))
+end
 
 
 ## can't do this because of https://github.com/JuliaLang/julia/issues/14919
