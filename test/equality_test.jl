@@ -1,8 +1,8 @@
 using Darwin
-import Darwin: crossover, mutate!, selection, setup!,
-    PairWithBestSelection
+import Darwin: crossover, mutate!, selection
 
 using LearningStrategies: learn!, MaxIter, strategy, Verbose
+using Distributions
 
 import Base: copy
 import Random: AbstractRNG, rand, SamplerType
@@ -32,6 +32,10 @@ end
 const SelectionResult = NTuple{2, Individual{EqualityMonster}}
 const EMSelection = PairWithBestSelection{EqualityMonster}
 
+
+const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Int}}
+
+
 struct EMCrossover <: CrossoverStrategy{SelectionResult} end
 
 function crossover(parents::SelectionResult, ::EMCrossover)
@@ -48,22 +52,19 @@ function crossover(parents::SelectionResult, ::EMCrossover)
 end
 
 
-struct EMMutation <: MutationStrategy{EqualityMonster}
-    p::Float64
-end
-
 function mutate!(child::EqualityMonster, strat::EMMutation)
-    if rand() < strat.p
-        child.abcde[rand(1:5)] = rand(0:42)
-    end
-    
+    mutate!(child.abcde, strat.inner)
     child
 end
 
 initial_population = rand(Individual{EqualityMonster}, 64)
 
-# let's go crazy and mutate 20% of the time
-model = GAModel(initial_population, fitness, EMSelection(), EMCrossover(), EMMutation(0.2))
+model = GAModel(initial_population, fitness,
+                EMSelection(),
+                EMCrossover(),
+                # let's go crazy and mutate 20% of the time
+                EMMutation(0.2, DiscreteUniform(0, 42)))
+
 strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(200))
 
 result = learn!(model, strat)

@@ -8,11 +8,22 @@ export BitFlip,
     BoundedConvolution,
     BoundedGaussianConvolution,
     BoundedUniformConvolution,
-    UniformMutation
+    LiftedMutation,
+    PointwiseMutation
 
 abstract type MutationStrategy{G} end
 
 setup!(strategy::MutationStrategy, model) = strategy
+
+
+struct LiftedMutation{T, M, I} <: MutationStrategy{T}
+    inner::M
+
+    LiftedMutation{T}(strat::M) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(strat)
+    LiftedMutation{T, M}(args...) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(M(args...))
+end
+
+
 
 """
     mutate!(genome, strategy[, generation]) -> genome
@@ -43,21 +54,19 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
 end
 
 
-struct UniformMutation{T<:Real} <: MutationStrategy{AbstractVector{T}}
+struct PointwiseMutation{T} <: MutationStrategy{AbstractVector{T}}
     rate::Float64
-    bounds::Uniform{T}
+    tweak::Distribution{Univariate}
 
-    function UniformMutation(rate, l, u)
-        U = promote_type(l, u)
-        new{U}(rate, Uniform{U}(l, u))
-    end
+    PointwiseMutation{Int}(rate, tweak::Distribution{Univariate, Discrete}) = new{Int}(rate, tweak)
+    PointwiseMutation(rate, tweak::Distribution{Univariate, Discrete}) = new{Int}(rate, tweak)
     
-    UniformMutation(rate, bounds::Uniform{T}) where T = new{T}(rate, bounds)
+    PointwiseMutation(rate, tweak::Distribution{Univariate, Continuous}) = new{Float64}(rate, tweak)
 end
 
-function mutate!(genome::AbstractVector{T}, strat::UniformMutation{T}) where {T}
+function mutate!(genome::AbstractVector{T}, strat::PointwiseMutation{T}) where {T}
     for i in eachindex(genome)
-        (rand() < strat.rate) && (genome[i] = rand(strat.bounds))
+        (rand() < strat.rate) && (genome[i] = rand(strat.tweak))
     end
 
     genome
@@ -66,12 +75,13 @@ end
 
 struct BoundedConvolution{T<:Real} <: MutationStrategy{AbstractVector{T}}
     rate::Float64
-    tweak::Distribution{T}
+    tweak::Distribution{Univariate}
     min::T
     max::T
 
-    function BoundedConvolution(rate, tweak::Distribution{T}, min, max) where T
-        @assert mean(tweak) == zero(T) "`tweak` should have zero mean!"
+    function BoundedConvolution(rate, tweak::Distribution{Univariate}, min, max)
+        T = eltype(tweak)
+        @assert (mean(tweak) == zero(T)) "`tweak` should have zero mean!"
         TT = promote_type(typeof(min), typeof(max), T)
         new{TT}(convert(Float64, rate), r, convert(TT, min), convert(TT, max))
     end
