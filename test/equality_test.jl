@@ -1,5 +1,5 @@
 using Darwin
-import Darwin: crossover, mutate!, selection
+import Darwin: crossover!, mutate!, selection
 
 using LearningStrategies: learn!, MaxIter, strategy, Verbose
 using Distributions
@@ -38,7 +38,7 @@ const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Int}}
 
 struct EMCrossover <: CrossoverStrategy{SelectionResult} end
 
-function crossover(parents::SelectionResult, ::EMCrossover)
+function crossover!(parents::SelectionResult, ::EMCrossover)
     # grab each element from a random parent
     crossover_points = rand(Bool, 5)
     result = EqualityMonster()

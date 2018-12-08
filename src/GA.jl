@@ -46,7 +46,7 @@ function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
 
     # TODO: log timing information
     for parents in selection(model.population, model.selectionstrategy, i)
-        for child in [crossover(copy.(parents), model.crossoverstrategy, i);]
+        for child in [crossover!(copy.(parents), model.crossoverstrategy, i);]
             push!(evolver.cache, mutate!(child, model.mutationstrategy, i))
         end
     end
