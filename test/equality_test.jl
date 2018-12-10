@@ -29,16 +29,12 @@ rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rn
 end
 
 
-const SelectionResult = NTuple{2, Individual{EqualityMonster}}
-const EMSelection = PairWithBestSelection{EqualityMonster}
+const EMSelection = PairWithBestSelection{EqualityMonster, 1}
 
 
-const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Int}}
+struct EMCrossover <: CrossoverStrategy{1, 2} end
 
-
-struct EMCrossover <: CrossoverStrategy{SelectionResult} end
-
-function crossover!(parents::SelectionResult, ::EMCrossover)
+function crossover!(parents::SelectionResult{EqualityMonster, 2}, ::EMCrossover)
     # grab each element from a random parent
     crossover_points = rand(Bool, 5)
     result = EqualityMonster()
@@ -52,10 +48,13 @@ function crossover!(parents::SelectionResult, ::EMCrossover)
 end
 
 
+const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Int}}
+
 function mutate!(child::EqualityMonster, strat::EMMutation)
     mutate!(child.abcde, strat.inner)
     child
 end
+
 
 initial_population = rand(Individual{EqualityMonster}, 64)
 

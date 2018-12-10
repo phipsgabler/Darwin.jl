@@ -1,13 +1,18 @@
 export select,
     SelectionStrategy,
+    SelectionResult,
     setup!
 
 export PairWithBestSelection
 
 
-abstract type SelectionStrategy{S} end
+abstract type SelectionStrategy{P, K} end
+
+const SelectionResult{T, K} = NTuple{K, Individual{T}}
+
 
 setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
+
 
 """
     selection(population, strategy[, generation]) -> selection
@@ -27,18 +32,21 @@ selection(population, strategy, generation) = selection(population, strategy)
 #     partialsortperm(model.population, 1:μ, by = assess!, rev = true)
 # end
 
-mutable struct PairWithBestSelection{T} <: SelectionStrategy{NTuple{2, Individual{T}}}
+mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{P, 2}
     model::AbstractEvolutionaryModel
 
-    PairWithBestSelection{T}() where T = new{T}()
+    PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
 end
 
-function setup!(strategy::PairWithBestSelection{T}, model::AbstractEvolutionaryModel) where {T} 
+function setup!(strategy::PairWithBestSelection, model::AbstractEvolutionaryModel)
     strategy.model = model
     strategy
 end
 
-function selection(population::Population{T}, strat::PairWithBestSelection{T}) where {T}
+function selection(population::Population{T}, strat::PairWithBestSelection{T, P}) where {T, P}
+    M = length(population) ÷ P
     # simple naive groupings that pair the best entitiy with every other
-    Iterators.zip(Iterators.repeated(findfittest(strat.model), length(population)), population)
+    fittest = findfittest(strat.model)
+    Iterators.zip(Iterators.repeated(findfittest(strat.model), M),
+                  Iterators.take(Sampling(population), M))
 end

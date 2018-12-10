@@ -3,10 +3,10 @@ const L = LearningStrategies
 
 export GAEvolver, GAModel
 
-mutable struct GAModel{T, S,
+mutable struct GAModel{T, M, N,
                        F<:AbstractFitness{>:T},
-                       Fs<:SelectionStrategy{<:S},
-                       Fc<:CrossoverStrategy{>:S},
+                       Fs<:SelectionStrategy{M, N},
+                       Fc<:CrossoverStrategy{M, N},
                        Fm<:MutationStrategy{T}} <: AbstractEvolutionaryModel
     population::Population{T}
     fittest::Union{Individual{T}, Nothing}

@@ -7,7 +7,7 @@ export crossover,
 
 export ArithmeticCrossover
 
-abstract type CrossoverStrategy{S} end
+abstract type CrossoverStrategy{P, K} end
 
 setup!(strategy::CrossoverStrategy, model::AbstractEvolutionaryModel) = strategy
 
@@ -16,20 +16,23 @@ setup!(strategy::CrossoverStrategy, model::AbstractEvolutionaryModel) = strategy
 
 Perform crossover between `parents`.
 """
-crossover!(parents::S, ::CrossoverStrategy{S}) where {S} = parents
-crossover!(parents::S,  strategy::CrossoverStrategy{S}, generation) where {S} =
+crossover!(parents::SelectionResult{T, K}, ::CrossoverStrategy{P, K}) where {T, P, K} = parents
+crossover!(parents::SelectionResult{T, K},  strategy::CrossoverStrategy{P, K},
+           generation) where {T, P, K} =
     crossover!(parents, strategy)
 
-crossover(parents::S, strat::CrossoverStrategy{S}) where {S} = crossover!(copy.(parents), strat)
-crossover(parents::S,  strategy::CrossoverStrategy{S}, generation) where {S} =
+crossover(parents::SelectionResult{T, K}, strat::CrossoverStrategy{P, K}) where {T, P, K} =
+    crossover!(copy.(parents), strat)
+crossover(parents::SelectionResult{T, K},  strategy::CrossoverStrategy{P, K},
+          generation) where {T, P, K} =
     crossover!(copy.(parents), strat, generation)
 
 
-struct ArithmeticCrossover{T, N} <: CrossoverStrategy{NTuple{N, <:AbstractArray{<:Real}}}
+struct ArithmeticCrossover{T, K} <: CrossoverStrategy{K, K}
     rate::Float64
 end
 
-function crossover!(parents::NTuple{2, <:AbstractArray{T}}, strat::ArithmeticCrossover{T, 2}) where {T}
+function crossover!(parents::SelectionResult{T, 2}, strat::ArithmeticCrossover{T, 2}) where {T}
     if rand() < strat.rate
         mixing = rand()
         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],

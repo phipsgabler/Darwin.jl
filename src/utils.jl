@@ -1,6 +1,6 @@
 import Distributions
 const D = Distributions
-import Base: +
+import Base: +, iterate
 
 struct TimeInfo
     time::Float64
@@ -69,3 +69,14 @@ D.mode(d::Shifted) = D.mode(d.dist) + d.δ
 # StatsBase.entropy(d::Shifted, b::Real) = StatsBase.entropy(d.D, b)
 # mgf(d::Shifted, ::Any) = ???
 # cf(d::Shifted, ::Any) = ???
+
+
+
+struct Sampling
+    collection
+    indices::Vector{Int}
+
+    Sampling(collection)  = new(collection, collect(eachindex(collection)))
+end
+
+iterate(s::Sampling, state::Tuple{} = ()) = (s.collection[rand(s.indices)], state)
