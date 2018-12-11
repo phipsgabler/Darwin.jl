@@ -71,12 +71,7 @@ D.mode(d::Shifted) = D.mode(d.dist) + d.δ
 # cf(d::Shifted, ::Any) = ???
 
 
+# see: https://docs.python.org/3/library/itertools.html#itertools-recipes
+repeatfunc(f, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated(()))
+repeatfunc(f, n, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated((), n))
 
-struct Sampling
-    collection
-    indices::Vector{Int}
-
-    Sampling(collection)  = new(collection, collect(eachindex(collection)))
-end
-
-iterate(s::Sampling, state::Tuple{} = ()) = (s.collection[rand(s.indices)], state)

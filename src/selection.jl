@@ -45,8 +45,9 @@ end
 
 function selection(population::Population{T}, strat::PairWithBestSelection{T, P}) where {T, P}
     M = length(population) ÷ P
+    fittest = findfittest(strat.model)
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(strat.model)
-    Iterators.zip(Iterators.repeated(findfittest(strat.model), M),
-                  Iterators.take(Sampling(population), M))
+    Iterators.zip(Iterators.repeated(fittest, M),
+                  repeatfunc(rand, M, population))
 end
