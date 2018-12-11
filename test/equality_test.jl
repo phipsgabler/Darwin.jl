@@ -34,7 +34,7 @@ const EMSelection = PairWithBestSelection{EqualityMonster, 1}
 
 struct EMCrossover <: CrossoverStrategy{1, 2} end
 
-function crossover!(parents::SelectionResult{EqualityMonster, 2}, ::EMCrossover)
+function crossover!(parents::Family{EqualityMonster, 2}, ::EMCrossover)
     # grab each element from a random parent
     crossover_points = rand(Bool, 5)
     result = EqualityMonster()
@@ -44,7 +44,7 @@ function crossover!(parents::SelectionResult{EqualityMonster, 2}, ::EMCrossover)
         result.abcde[.~crossover_points] .= g2.abcde[.~crossover_points]
     end
     
-    Individual(result)
+    Family{Individual, 1}(Individual(result))
 end
 
 

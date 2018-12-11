@@ -3,10 +3,10 @@ const L = LearningStrategies
 
 export GAEvolver, GAModel
 
-mutable struct GAModel{T, M, N,
+mutable struct GAModel{T, P, K,
                        F<:AbstractFitness{>:T},
-                       Fs<:SelectionStrategy{M, N},
-                       Fc<:CrossoverStrategy{M, N},
+                       Fs<:SelectionStrategy{P, K},
+                       Fc<:CrossoverStrategy{P, K},
                        Fm<:MutationStrategy{T}} <: AbstractEvolutionaryModel
     population::Population{T}
     fittest::Union{Individual{T}, Nothing}
@@ -41,12 +41,12 @@ function L.setup!(evolver::GAEvolver{T}, model::GAModel{T}) where T
 end
 
 
-function L.update!(model::GAModel{T}, evolver::GAEvolver{T}, i, _item) where T
+function L.update!(model::GAModel{T, P, K}, evolver::GAEvolver{T}, i, _item) where {T, P, K}
     preparecache!(evolver, length(model.population))
 
     # TODO: log timing information
-    for parents in selection(model.population, model.selectionstrategy, i)
-        for child in [crossover!(copy.(parents), model.crossoverstrategy, i);]
+    for parents::Family{T, K} in selection(model.population, model.selectionstrategy, i)
+        for child in crossover!(copy.(parents), model.crossoverstrategy, i)::Family{T, P}
             push!(evolver.cache, mutate!(child, model.mutationstrategy, i))
         end
     end

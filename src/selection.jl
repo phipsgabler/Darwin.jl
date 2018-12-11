@@ -8,9 +8,6 @@ export PairWithBestSelection
 
 abstract type SelectionStrategy{P, K} end
 
-const SelectionResult{T, K} = NTuple{K, Individual{T}}
-
-
 setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
 
 

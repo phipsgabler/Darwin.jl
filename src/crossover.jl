@@ -3,11 +3,13 @@ using Distributions: Dirichlet
 export crossover,
     crossover!,
     CrossoverStrategy,
+    CrossoverResult,
     setup!
 
 export ArithmeticCrossover
 
 abstract type CrossoverStrategy{P, K} end
+
 
 setup!(strategy::CrossoverStrategy, model::AbstractEvolutionaryModel) = strategy
 
@@ -16,14 +18,14 @@ setup!(strategy::CrossoverStrategy, model::AbstractEvolutionaryModel) = strategy
 
 Perform crossover between `parents`.
 """
-crossover!(parents::SelectionResult{T, K}, ::CrossoverStrategy{P, K}) where {T, P, K} = parents
-crossover!(parents::SelectionResult{T, K},  strategy::CrossoverStrategy{P, K},
+crossover!(parents::Family{T, K}, ::CrossoverStrategy{P, K}) where {T, P, K} = parents
+crossover!(parents::Family{T, K},  strategy::CrossoverStrategy{P, K},
            generation) where {T, P, K} =
     crossover!(parents, strategy)
 
-crossover(parents::SelectionResult{T, K}, strat::CrossoverStrategy{P, K}) where {T, P, K} =
+crossover(parents::Family{T, K}, strat::CrossoverStrategy{P, K}) where {T, P, K} =
     crossover!(copy.(parents), strat)
-crossover(parents::SelectionResult{T, K},  strategy::CrossoverStrategy{P, K},
+crossover(parents::Family{T, K},  strategy::CrossoverStrategy{P, K},
           generation) where {T, P, K} =
     crossover!(copy.(parents), strat, generation)
 
@@ -32,7 +34,7 @@ struct ArithmeticCrossover{T, K} <: CrossoverStrategy{K, K}
     rate::Float64
 end
 
-function crossover!(parents::SelectionResult{T, 2}, strat::ArithmeticCrossover{T, 2}) where {T}
+function crossover!(parents::Family{T, 2}, strat::ArithmeticCrossover{T, 2}) where {T}
     if rand() < strat.rate
         mixing = rand()
         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],
@@ -41,6 +43,16 @@ function crossover!(parents::SelectionResult{T, 2}, strat::ArithmeticCrossover{T
          return parents
     end
 end
+
+# function crossover!(parents::Family{T, 1}, strat::ArithmeticCrossover{T, 1}) where {T}
+#     if rand() < strat.rate
+#         mixing = rand()
+#         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],
+#                 (1 - mixing) .* parents[2] .+ mixing .* parents[1])
+#     else
+#          return parents
+#     end
+# end
 
 ## TODO: move D to strategy struct, use something different than "N random parent permutations"?
 # function crossover(parents::NTuple{N, <:AbstractArray{T}}, strat::ArithmeticCrossover{T, N}) where {T}

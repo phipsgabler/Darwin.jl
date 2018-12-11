@@ -1,7 +1,8 @@
 import Base: copy
 import Random: AbstractRNG, rand, SamplerType
 
-export Individual,
+export Family,
+    Individual,
     ongenome,
     Population
 
@@ -40,3 +41,7 @@ end
 
 
 const Population{T} = Vector{Individual{T}}
+
+
+const Family{T, N} = NTuple{N, Individual{T}}
+(::Type{Family{T, N}})(args::Vararg{T, N}) where {T,N} = args
