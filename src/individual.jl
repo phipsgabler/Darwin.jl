@@ -2,6 +2,7 @@ import Base: copy
 import Random: AbstractRNG, rand, SamplerType
 
 export Family,
+    genome,
     Individual,
     ongenome,
     Population
@@ -16,6 +17,7 @@ Individual(genome::G) where {G} = Individual{G}(genome, nothing)
 Individual(genome::G, fitnessvalue) where G =
     Individual{G}(genome, convert(FitnessValue, fitnessvalue))
 
+genome(i::Individual) = i.genome
 
 copy(individual::Individual) = Individual(copy(individual.genome), individual.fitnessvalue)
 
@@ -45,3 +47,5 @@ const Population{T} = Vector{Individual{T}}
 
 const Family{T, N} = NTuple{N, Individual{T}}
 (::Type{Family{T, N}})(args::Vararg{T, N}) where {T,N} = args
+
+

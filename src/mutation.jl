@@ -41,6 +41,11 @@ function mutate!(individual::Individual{G}, strategy::MutationStrategy{G},
 end
 
 
+struct NoMutation{T} <: MutationStrategy{T} end
+
+mutate!(genome::Any, strat::NoMutation) = genome
+
+
 struct BitFlip <: MutationStrategy{AbstractVector{Bool}}
     p::Float64
 end

@@ -32,19 +32,10 @@ end
 const EMSelection = PairWithBestSelection{EqualityMonster, 1}
 
 
-struct EMCrossover <: CrossoverStrategy{1, 2} end
+const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Int, 2, 1}}
 
-function crossover!(parents::Family{EqualityMonster, 2}, ::EMCrossover)
-    # grab each element from a random parent
-    crossover_points = rand(Bool, 5)
-    result = EqualityMonster()
-    
-    ongenome(parents[1], parents[2]) do g1, g2
-        result.abcde[crossover_points] .= g1.abcde[crossover_points]
-        result.abcde[.~crossover_points] .= g2.abcde[.~crossover_points]
-    end
-    
-    Family{Individual, 1}(Individual(result))
+function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover)
+    EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), strategy.inner))
 end
 
 

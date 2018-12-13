@@ -6,7 +6,7 @@ export select,
 export PairWithBestSelection
 
 
-abstract type SelectionStrategy{P, K} end
+abstract type SelectionStrategy{T, P, K} end
 
 setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
 
@@ -17,9 +17,9 @@ setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
 Select parts of population of a population to be used in breeding.  Should compare fitnesses using 
 `isless`, if that is relevant.
 """
-selection(population, strategy, generation) = selection(population, strategy)
-# selection(model::AbstractEvolutionaryModel, generation) = selection(model.population, model.strategy, generation)
-
+selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
+          generation::Int) where {T, P, K} =
+    selection(population, strategy)
 
 
 # struct TruncationSelection{μ} <: SelectionStrategy{AbstractVector{T}} end
@@ -29,7 +29,8 @@ selection(population, strategy, generation) = selection(population, strategy)
 #     partialsortperm(model.population, 1:μ, by = assess!, rev = true)
 # end
 
-mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{P, 2}
+
+mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{T, P, 2}
     model::AbstractEvolutionaryModel
 
     PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
