@@ -29,9 +29,6 @@ rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rn
 end
 
 
-# const EMSelection = PairWithBest{EqualityMonster, 1}
-const EMSelection = TournamentSelection{EqualityMonster, 3, 1, 2}
-
 const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Int, 2, 1}}
 
 function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover)
@@ -47,21 +44,28 @@ function mutate!(child::EqualityMonster, strat::EMMutation)
 end
 
 
-initial_population = rand(Individual{EqualityMonster}, 64)
-
-model = GAModel(initial_population, fitness,
-                EMSelection(),
-                EMCrossover(),
-                # let's go crazy and mutate 20% of the time
-                EMMutation(0.2, DiscreteUniform(0, 42)))
-
-strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(200))
-
-result = learn!(model, strat)
+function run_with(selection, crossover, mutation, n)
+    initial_population = rand(Individual{EqualityMonster}, 64)
+    model = GAModel(initial_population, fitness, selection, crossover, mutation)
+    strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(n))
+    learn!(model, strat)
+end
 
 
 @testset "EqualityMonster" begin
     # @test isinf(fitness(result.population[fittest]))
-    @test sum(result.fittest.genome.abcde .* (1:5)) == 42
+    
+    # let's go crazy and mutate 20% of the time
+    r1 = run_with(PairWithBest{EqualityMonster, 1}(),
+                  EMCrossover(),
+                  EMMutation(0.2, DiscreteUniform(0, 42)),
+                  200)
+    @test sum(r1.fittest.genome.abcde .* (1:5)) == 42
+
+    r2 = run_with(TournamentSelection{EqualityMonster, 5, 1, 2}(),
+                  EMCrossover(),
+                  EMMutation(0.2, DiscreteUniform(0, 42)),
+                  300)
+    @test sum(r2.fittest.genome.abcde .* (1:5)) == 42
 end
 
