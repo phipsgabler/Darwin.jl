@@ -29,8 +29,8 @@ rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rn
 end
 
 
-const EMSelection = PairWithBestSelection{EqualityMonster, 1}
-
+# const EMSelection = PairWithBest{EqualityMonster, 1}
+const EMSelection = TournamentSelection{EqualityMonster, 3, 1, 2}
 
 const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Int, 2, 1}}
 

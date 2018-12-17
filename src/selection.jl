@@ -1,9 +1,16 @@
+using Distributions
+import Base: iterate
+
 export select,
     SelectionStrategy,
     SelectionResult,
     setup!
 
-export PairWithBestSelection
+export FitnessProportionate,
+    L1Selection,
+    PairWithBest,
+    SoftmaxSelection,
+    TournamentSelection
 
 
 abstract type SelectionStrategy{T, P, K} end
@@ -30,22 +37,78 @@ selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
 # end
 
 
-mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{T, P, 2}
+mutable struct PairWithBest{T, P} <: SelectionStrategy{T, P, 2}
     model::AbstractEvolutionaryModel
 
-    PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
+    PairWithBest{T, P}() where {T, P} = new{T, P}()
 end
 
-function setup!(strategy::PairWithBestSelection, model::AbstractEvolutionaryModel)
+function setup!(strategy::PairWithBest, model::AbstractEvolutionaryModel)
     strategy.model = model
     strategy
 end
 
-function selection(population::Population{T}, strat::PairWithBestSelection{T, P}) where {T, P}
+function selection(population::Population{T}, strategy::PairWithBest{T, P}) where {T, P}
     M = length(population) ÷ P
-    fittest = findfittest(strat.model)
+    fittest = findfittest(strategy.model)
     # simple naive groupings that pair the best entitiy with every other
-    fittest = findfittest(strat.model)
+    fittest = findfittest(strategy.model)
     Iterators.zip(Iterators.repeated(fittest, M),
                   repeatfunc(rand, M, population))
 end
+
+
+struct FitnessProportionate{T, P, K, F} <: SelectionStrategy{T, P, K}
+    transform::F
+end
+
+@generated function selection(population::Population{T},
+                              strategy::FitnessProportionate{T, P, K}) where {T, P, K}
+    rndix = fill(:(view(population, indices[rand(dist, M)])), K)
+    quote
+        M = length(population) ÷ P
+        dist = Categorical(strategy.transform(fitness.(population)))
+        indices = eachindex(population)
+        Iterators.zip($(rndix...))
+    end
+end
+
+function l1normalize(f)
+    y = f .- minimum(f)
+    s = sum(y)
+    s == 0 ? fill(1/length(f), size(f)) : y ./ s
+end
+
+function softmax(f)
+    y = exp.(f .- maximum(f))
+    y ./ sum(y)
+end
+
+const SoftmaxSelection{T, P, K} = FitnessProportionate{T, P, K, typeof(softmax)}
+(::Type{SoftmaxSelection{T, P, K}})() where {T, P, K} = SoftmaxSelection{T, P, K}(softmax)
+
+const L1Selection{T, P, K} = FitnessProportionate{T, P, K, typeof(l1normalize)}
+(::Type{L1Selection{T, P, K}})() where {T, P, K} = L1Selection{T, P, K}(l1normalize)
+
+
+struct TournamentSelection{T, S, P, K} <: SelectionStrategy{T, P, K} end
+
+struct TournamentSelectionIterator{S, P, K, T}
+    M::Int
+    population::Population{T}
+
+    TournamentSelectionIterator{S, P, K}(population::Population{T}) where {S, P, K, T} =
+        new{S, P, K, T}(length(population) ÷ P, population)
+end
+
+function iterate(itr::TournamentSelectionIterator{S, P, K}, state = 0) where {S, P, K}
+    if state ≥ itr.M
+        return nothing
+    else
+        ntuple(i -> maximumby(fitness, randview(itr.population, S)), K), state + 1
+    end
+end
+
+selection(population::Population{T},
+          strategy::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
+    TournamentSelectionIterator{S, P, K}(population)

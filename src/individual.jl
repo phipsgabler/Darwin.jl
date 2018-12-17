@@ -2,6 +2,7 @@ import Base: copy
 import Random: AbstractRNG, rand, SamplerType
 
 export Family,
+    fitness,
     genome,
     Individual,
     ongenome,
@@ -18,6 +19,7 @@ Individual(genome::G, fitnessvalue) where G =
     Individual{G}(genome, convert(FitnessValue, fitnessvalue))
 
 genome(i::Individual) = i.genome
+fitness(i::Individual) = i.fitnessvalue
 
 copy(individual::Individual) = Individual(copy(individual.genome), individual.fitnessvalue)
 

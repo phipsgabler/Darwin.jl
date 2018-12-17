@@ -18,9 +18,17 @@ macro timeinfo(expr)
     end
 end
 
+
 maximumby(f, collection) = mapreduce(x -> (v=x, f=f(x)),
                                      (a, b) -> ifelse(isless(b.f, a.f), a, b),
                                      collection).v
+
+randview(collection, n) = view(collection, rand(eachindex(collection), n))
+
+# see: https://docs.python.org/3/library/itertools.html#itertools-recipes
+repeatfunc(f, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated(()))
+repeatfunc(f, n, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated((), n))
+
 
 # see https://github.com/JuliaLang/julia/blob/master/doc/src/devdocs/ast.md
 # using MacroTools
@@ -70,8 +78,4 @@ D.mode(d::Shifted) = D.mode(d.dist) + d.δ
 # mgf(d::Shifted, ::Any) = ???
 # cf(d::Shifted, ::Any) = ???
 
-
-# see: https://docs.python.org/3/library/itertools.html#itertools-recipes
-repeatfunc(f, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated(()))
-repeatfunc(f, n, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated((), n))
 
