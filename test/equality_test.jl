@@ -1,3 +1,7 @@
+module Equality
+
+using Test
+
 using Darwin
 import Darwin: crossover!, mutate!, selection
 
@@ -6,6 +10,7 @@ using Distributions
 
 import Base: copy
 import Random: AbstractRNG, rand, SamplerType
+
 
 # This example is taken from Westley Argentum:
 # https://github.com/WestleyArgentum/GeneticAlgorithms.jl
@@ -44,10 +49,10 @@ function mutate!(child::EqualityMonster, strat::EMMutation)
 end
 
 
-function run_with(selection, crossover, mutation, n)
+function run_with(selection, crossover, mutation, generations)
     initial_population = rand(Individual{EqualityMonster}, 64)
     model = GAModel(initial_population, fitness, selection, crossover, mutation)
-    strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(n))
+    strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(generations))
     learn!(model, strat)
 end
 
@@ -69,3 +74,4 @@ end
     @test sum(r2.fittest.genome.abcde .* (1:5)) == 42
 end
 
+end # module
