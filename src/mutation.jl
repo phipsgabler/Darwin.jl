@@ -63,10 +63,10 @@ struct PointwiseMutation{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
     tweak::Distribution{Univariate}
 
-    PointwiseMutation{T}(rate, tweak::Distribution{Univariate}) where {T} =
+    PointwiseMutation{T}(rate, tweak::Distribution{Univariate, Discrete}) where {T<:AbstractVector{<:Integer}} =
         new{T}(rate, tweak)
-    # PointwiseMutation(rate, tweak::Distribution{Univariate, Discrete}) = new{AbstractVector{Int}}(rate, tweak)
-    # PointwiseMutation(rate, tweak::Distribution{Univariate, Continuous}) = new{AbstractVector{Float64}}(rate, tweak)
+    PointwiseMutation{T}(rate, tweak::Distribution{Univariate, Continuous}) where {T<:AbstractVector{<:AbstractFloat}} =
+        new{T}(rate, tweak)
 end
 
 function mutate!(genome::T, strat::PointwiseMutation{T}) where {T}
@@ -80,11 +80,11 @@ end
 
 struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
-    tweak::Distribution{Univariate}
+    tweak::Distribution{Univariate, Continuous}
     min::T
     max::T
 
-    function BoundedConvolution(rate, tweak::Distribution{Univariate}, min, max)
+    function BoundedConvolution(rate, tweak::Distribution{Univariate, Continuous}, min, max)
         T = eltype(tweak)
         @assert (mean(tweak) == zero(T)) "`tweak` should have zero mean!"
         TT = promote_type(typeof(min), typeof(max), T)
