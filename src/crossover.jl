@@ -55,11 +55,11 @@ struct NoCrossover{T, N} <: CrossoverStrategy{T, N, N} end
 crossover!(parents::Family{<:Any, N}, strategy::NoCrossover{N}) where {N} = parents
 
 
-struct ArithmeticCrossover{T, K, P} <: CrossoverStrategy{AbstractVector{T}, K, P}
+struct ArithmeticCrossover{T<:AbstractVector, K, P} <: CrossoverStrategy{T, K, P}
     rate::Float64
 end
 
-function crossover!(parents::NTuple{2, AbstractVector{T}},
+function crossover!(parents::NTuple{2, T},
                     strategy::ArithmeticCrossover{T, 2, 2}) where {T}
     if rand() < strategy.rate
         mixing = rand()
@@ -71,21 +71,19 @@ function crossover!(parents::NTuple{2, AbstractVector{T}},
 end
 
 
-struct UniformCrossover{T, K, P} <: CrossoverStrategy{AbstractVector{T}, K, P}
+struct UniformCrossover{T<:AbstractVector, K, P} <: CrossoverStrategy{T, K, P}
     p::Float64
     
     UniformCrossover{T, K, P}(p = 0.5) where {T, K, P} = new{T, K, P}(p)
-    UniformCrossover{T, N}(p = 0.5) where {T, N} = new{T, N, N}(p)
+    # UniformCrossover{T, N}(p = 0.5) where {T, N} = new{T, N, N}(p)
 end
 
-function crossover!(parents::NTuple{2, AbstractVector{T}},
-                    strategy::UniformCrossover{T, 2, 1}) where {T}
+function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 1}) where {T}
     crossover_points = rand(length(parents[1])) .≤ strategy.p
     (map(ifelse, crossover_points, parents...),)
 end
 
-function crossover!(parents::NTuple{2, AbstractVector{T}},
-                    strategy::UniformCrossover{T, 2, 2}) where {T}
+function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 2}) where {T}
     crossover_points = rand(length(parents[1])) .≤ strategy.p
     map(ifelse, crossover_points, parents...), map(ifelse, .~crossover_points, parents...)
 end

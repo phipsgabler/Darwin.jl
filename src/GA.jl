@@ -5,9 +5,9 @@ export GAEvolver, GAModel
 
 mutable struct GAModel{T, P, K,
                        F<:AbstractFitness{>:T},
-                       Fs<:SelectionStrategy{T, P, K},
-                       Fc<:CrossoverStrategy{T, K, P},
-                       Fm<:MutationStrategy{T}} <: AbstractEvolutionaryModel
+                       Fs<:SelectionStrategy{>:T, P, K},
+                       Fc<:CrossoverStrategy{>:T, K, P},
+                       Fm<:MutationStrategy{>:T}} <: AbstractEvolutionaryModel
     population::Population{T}
     fittest::Union{Individual{T}, Nothing}
     fitness::F

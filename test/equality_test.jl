@@ -34,14 +34,14 @@ rand(rng::AbstractRNG, ::SamplerType{EqualityMonster}) = EqualityMonster(rand(rn
 end
 
 
-const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Int, 2, 1}}
+const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Vector{Int}, 2, 1}}
 
 function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover)
     EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), strategy.inner))
 end
 
 
-const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Int}}
+const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Vector{Int}}}
 
 function mutate!(child::EqualityMonster, strat::EMMutation)
     mutate!(child.abcde, strat.inner)

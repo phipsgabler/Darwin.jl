@@ -59,17 +59,17 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
 end
 
 
-struct PointwiseMutation{T} <: MutationStrategy{AbstractVector{T}}
+struct PointwiseMutation{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
     tweak::Distribution{Univariate}
 
-    PointwiseMutation{Int}(rate, tweak::Distribution{Univariate, Discrete}) = new{Int}(rate, tweak)
-    PointwiseMutation(rate, tweak::Distribution{Univariate, Discrete}) = new{Int}(rate, tweak)
-    
-    PointwiseMutation(rate, tweak::Distribution{Univariate, Continuous}) = new{Float64}(rate, tweak)
+    PointwiseMutation{T}(rate, tweak::Distribution{Univariate}) where {T} =
+        new{T}(rate, tweak)
+    # PointwiseMutation(rate, tweak::Distribution{Univariate, Discrete}) = new{AbstractVector{Int}}(rate, tweak)
+    # PointwiseMutation(rate, tweak::Distribution{Univariate, Continuous}) = new{AbstractVector{Float64}}(rate, tweak)
 end
 
-function mutate!(genome::AbstractVector{T}, strat::PointwiseMutation{T}) where {T}
+function mutate!(genome::T, strat::PointwiseMutation{T}) where {T}
     for i in eachindex(genome)
         (rand() < strat.rate) && (genome[i] = rand(strat.tweak))
     end
@@ -78,7 +78,7 @@ function mutate!(genome::AbstractVector{T}, strat::PointwiseMutation{T}) where {
 end
 
 
-struct BoundedConvolution{T<:Real} <: MutationStrategy{AbstractVector{T}}
+struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
     tweak::Distribution{Univariate}
     min::T
@@ -88,11 +88,11 @@ struct BoundedConvolution{T<:Real} <: MutationStrategy{AbstractVector{T}}
         T = eltype(tweak)
         @assert (mean(tweak) == zero(T)) "`tweak` should have zero mean!"
         TT = promote_type(typeof(min), typeof(max), T)
-        new{TT}(convert(Float64, rate), r, convert(TT, min), convert(TT, max))
+        new{AbstractVector{TT}}(convert(Float64, rate), r, convert(TT, min), convert(TT, max))
     end
 end
 
-function mutate!(genome::AbstractVector{T}, strat::BoundedConvolution{T}) where {T<:Real}
+function mutate!(genome::T, strat::BoundedConvolution{T}) where {T}
     for i in eachindex(genome)
         if rand() ≤ strat.rate
             genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
