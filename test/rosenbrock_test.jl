@@ -53,13 +53,17 @@ end
                   ArithmeticCrossover{Entity, 2, 2}(0.7),
                   PointwiseMutation{Entity}(0.3, Bounds),
                   10_000)
-    # r1 = run_with(RosenbrockSelection(1.0, 0.15, 0.99),
-                  # ArithmeticCrossover{Entity}(0.7),
-                  # UniformMutation(0.3, Bounds))
-
+    
     @test isapprox(rosenbrock(r1.fittest.genome), 0.0, atol = 0.01)
     @test all(isapprox.(r1.fittest.genome, [1.0, 1.0], atol = 0.1))
-    # @show r1.fittest
+
+    r2 = run_with(TournamentSelection{Entity, 5, 1, 2}(),
+                  UniformCrossover{Entity, 2, 1}(),
+                  PointwiseMutation{Entity}(0.3, Bounds),
+                  10_000)
+
+    @test isapprox(rosenbrock(r2.fittest.genome), 0.0, atol = 0.01)
+    @test all(isapprox.(r2.fittest.genome, [1.0, 1.0], atol = 0.1))
 end
 
 
