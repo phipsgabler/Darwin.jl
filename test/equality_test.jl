@@ -42,11 +42,13 @@ end
 
 
 const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Vector{Int}}}
+const EMMutation2 = LiftedMutation{EqualityMonster, BoundedDiscreteUniformConvolution{Vector{Int}}}
 
-function mutate!(child::EqualityMonster, strat::EMMutation)
+function mutate!(child::EqualityMonster, strat::Union{EMMutation, EMMutation2})
     mutate!(child.abcde, strat.inner)
     child
 end
+
 
 
 function run_with(selection, crossover, mutation, generations)
@@ -64,12 +66,12 @@ end
     r1 = run_with(PairWithBest{EqualityMonster, 1}(),
                   EMCrossover(),
                   EMMutation(0.2, DiscreteUniform(0, 42)),
-                  200)
+                  300)
     @test sum(r1.fittest.genome.abcde .* (1:5)) == 42
 
     r2 = run_with(TournamentSelection{EqualityMonster, 5, 1, 2}(),
                   EMCrossover(),
-                  EMMutation(0.2, DiscreteUniform(0, 42)),
+                  EMMutation2(0.2, 20, 0, 42),
                   300)
     @test sum(r2.fittest.genome.abcde .* (1:5)) == 42
 end

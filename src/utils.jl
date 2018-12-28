@@ -53,12 +53,18 @@ repeatfunc(f, n, args...) = Iterators.map(((),) -> f(args...), Iterators.repeate
 
 
 # Will work if `D` is a location family.
-struct Shifted{T<:D.ContinuousUnivariateDistribution} <: D.ContinuousUnivariateDistribution
+struct Shifted{F<:D.VariateForm,
+               S<:D.ValueSupport,
+               T<:D.Distribution{F, S},
+               E} <: D.Distribution{F, S}
     dist::T
-    δ::Float64
-end
+    δ::E
 
-Shifted(dist::T, δ) where {T} = Shifted{T}(dist, convert(Float64, δ))
+    function Shifted(dist::T, δ) where {F<:D.VariateForm, S<:D.ValueSupport, T<:D.Distribution{F, S}}
+        E = eltype(dist)
+        new{F, S, T, E}(dist, convert(E, δ))
+    end
+end
 
 D.rand(d::Shifted) = D.rand(d.dist) + d.δ
 D.pdf(d::Shifted, x::Real) = D.pdf(d.dist, x - d.δ)

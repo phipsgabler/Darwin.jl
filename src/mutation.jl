@@ -6,6 +6,7 @@ export mutate!,
     
 export BitFlip,
     BoundedConvolution,
+    BoundedDiscreteUniformConvolution,
     BoundedGaussianConvolution,
     BoundedUniformConvolution,
     LiftedMutation,
@@ -80,11 +81,11 @@ end
 
 struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
-    tweak::Distribution{Univariate, Continuous}
+    tweak::Distribution{Univariate}
     min::Real
     max::Real
 
-    function BoundedConvolution{T}(rate, tweak::Distribution{Univariate, Continuous}, min, max) where T
+    function BoundedConvolution{T}(rate, tweak::Distribution{Univariate}, min, max) where T
         @assert (mean(tweak) == 0) "`tweak` should have zero mean!"
         new{T}(rate, tweak, min, max)
     end
@@ -111,7 +112,16 @@ struct BoundedGaussianConvolution{T<:AbstractVector} <: MutationStrategy{T}
         new{T}(BoundedConvolution{T}(rate, Normal(0, σ), min, max))
 end
 
-function mutate!(genome::T,
-                 strat::Union{BoundedUniformConvolution{T}, BoundedGaussianConvolution{T}}) where {T}
+struct BoundedDiscreteUniformConvolution{T<:AbstractVector} <: MutationStrategy{T}
+    bc::BoundedConvolution{T}
+    BoundedDiscreteUniformConvolution{T}(rate, r, min, max) where T =
+        new{T}(BoundedConvolution{T}(rate, DiscreteUniform(-r, r), min, max))
+end
+
+const SpecialBoundedConvolution{T} = Union{BoundedUniformConvolution{T},
+                                           BoundedGaussianConvolution{T},
+                                           BoundedDiscreteUniformConvolution{T}}
+
+function mutate!(genome::T, strat::SpecialBoundedConvolution{T}) where {T}
     mutate!(genome, strat.bc)
 end
