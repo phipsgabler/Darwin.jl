@@ -29,12 +29,12 @@ selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
     selection(population, strategy)
 
 
-# struct TruncationSelection{μ} <: SelectionStrategy{AbstractVector{T}} end
+struct TruncationSelection{T, P} <: SelectionStrategy{T, P, 1} end
 
-# function selection(model::GAModel{T, <:AbstractVector{T},
-#                                   F, TruncationSelection{T, μ}, Fc, Fm}) where {T, F, μ, Fc, Fm}
-#     partialsortperm(model.population, 1:μ, by = assess!, rev = true)
-# end
+function selection(population::Population{T}, strategy::TrunctionSelection{T, P}) where {T, P}
+    μ = length(population) ÷ P
+    partialsort(model.population, 1:μ, by = fitness, rev = true)
+end
 
 
 mutable struct PairWithBest{T, P} <: SelectionStrategy{T, P, 2}
@@ -49,11 +49,11 @@ function setup!(strategy::PairWithBest, model::AbstractEvolutionaryModel)
 end
 
 function selection(population::Population{T}, strategy::PairWithBest{T, P}) where {T, P}
-    M = length(population) ÷ P
+    μ = length(population) ÷ P
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(strategy.model)
-    Iterators.zip(Iterators.repeated(fittest, M),
-                  repeatfunc(rand, M, population))
+    Iterators.zip(Iterators.repeated(fittest, μ),
+                  repeatfunc(rand, μ, population))
 end
 
 
