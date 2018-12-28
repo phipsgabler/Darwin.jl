@@ -36,8 +36,8 @@ end
 
 const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Vector{Int}, 2, 1}}
 
-function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover)
-    EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), strategy.inner))
+function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover, generation::Integer)
+    EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), strategy.inner, generation))
 end
 
 

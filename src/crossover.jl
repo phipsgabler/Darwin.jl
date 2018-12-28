@@ -39,14 +39,12 @@ end
 
 Perform crossover between `parents`.
 """
-crossover!(parents::Family{T, K}, strategy::CrossoverStrategy{T, K, P}) where {T, K, P} =
-    Individual.(crossover!(genome.(parents), strategy))
-crossover!(parents::Family{T, K},  strategy::CrossoverStrategy{T, K, P},
+# crossover!(parents::Family{T, K}, strategy::CrossoverStrategy{T, K, P}) where {T, K, P} =
+#     Individual.(crossover!(genome.(parents), strategy))
+crossover!(parents::Family{T, K},
+           strategy::CrossoverStrategy{T, K, P},
            generation::Int) where {T, K, P} =
     Individual.(crossover!(genome.(parents), strategy, generation))
-crossover!(parents::NTuple{K, T}, strategy::CrossoverStrategy{T, K, P},
-           generation::Int) where {T, K, P} =
-    crossover!(parents, strategy)
 
 
 
@@ -56,12 +54,13 @@ crossover!(parents::Family{<:Any, N}, strategy::NoCrossover{N}) where {N} = pare
 
 
 struct ArithmeticCrossover{T<:AbstractVector, K, P} <: CrossoverStrategy{T, K, P}
-    rate::Float64
+    rate::Rate
 end
 
 function crossover!(parents::NTuple{2, T},
-                    strategy::ArithmeticCrossover{T, 2, 2}) where {T}
-    if rand() < strategy.rate
+                    strategy::ArithmeticCrossover{T, 2, 2},
+                    generation::Integer) where {T}
+    if rand() < strategy.rate(generation)
         mixing = rand()
         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],
                 (1 - mixing) .* parents[2] .+ mixing .* parents[1])
@@ -72,21 +71,25 @@ end
 
 
 struct UniformCrossover{T<:AbstractVector, K, P} <: CrossoverStrategy{T, K, P}
-    p::Float64
+    p::Rate
     
-    UniformCrossover{T, K, P}(p = 0.5) where {T, K, P} = new{T, K, P}(p)
-    # UniformCrossover{T, N}(p = 0.5) where {T, N} = new{T, N, N}(p)
+    UniformCrossover{T, K, P}(p::Rate = ConstantRate(0.5)) where {T, K, P} = new{T, K, P}(p)
 end
 
-function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 1}) where {T}
-    crossover_points = rand(length(parents[1])) .≤ strategy.p
+function crossover!(parents::NTuple{2, T},
+                    strategy::UniformCrossover{T, 2, 1},
+                    generation::Integer) where {T}
+    crossover_points = rand(length(parents[1])) .≤ strategy.p(generation)
     (map(ifelse, crossover_points, parents...),)
 end
 
-function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 2}) where {T}
-    crossover_points = rand(length(parents[1])) .≤ strategy.p
+function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 2},
+                    generation::Integer) where {T}
+    crossover_points = rand(length(parents[1])) .≤ strategy.p(generation)
     map(ifelse, crossover_points, parents...), map(ifelse, .~crossover_points, parents...)
 end
+
+
 
 # function crossover!(parents::Family{T, 1}, strategy::ArithmeticCrossover{T, 1}) where {T}
 #     if rand() < strategy.rate
