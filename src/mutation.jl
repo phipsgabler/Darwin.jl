@@ -6,9 +6,6 @@ export mutate!,
     
 export BitFlipMutation,
     AdditiveMutation,
-    AdditiveDiscreteUniformMutation,
-    AdditiveGaussianMutation,
-    AdditiveUniformMutation,
     LiftedMutation,
     PointwiseMutation
 
@@ -77,16 +74,23 @@ function mutate!(genome::T, strat::PointwiseMutation{T}, generation::Integer) wh
 end
 
 
-struct AdditiveMutation{T<:AbstractVector} <: MutationStrategy{T}
+struct AdditiveMutation{T<:AbstractVector, D<:Distribution{Univariate}} <: MutationStrategy{T}
     rate::Rate
-    tweak::Distribution{Univariate}
+    tweak::D
     min::Real
     max::Real
 
-    function AdditiveMutation{T}(rate, tweak::Distribution{Univariate}, min, max) where T
+    function AdditiveMutation{T}(rate, tweak::D, min, max) where {T, D<:Distribution{Univariate}}
         @assert (mean(tweak) == 0) "`tweak` should have zero mean!"
-        new{T}(rate, tweak, min, max)
+        new{T, D}(rate, tweak, min, max)
     end
+
+    AdditiveMutation{T, D}(rate, r, min, max) where {T, D<:Uniform} =
+        new{T, D}(rate, D(-r, r), min, max)
+    AdditiveMutation{T, D}(rate, σ, min, max) where {T, D<:Normal} =
+        new{T, D}(rate, D(0, σ), min, max)
+    AdditiveMutation{T, D}(rate, r, min, max) where {T, D<:DiscreteUniform} =
+        new{T, D}(rate, D(-r, r), min, max)
 end
 
 function mutate!(genome::T, strat::AdditiveMutation{T}, generation::Integer) where {T}
@@ -99,29 +103,3 @@ function mutate!(genome::T, strat::AdditiveMutation{T}, generation::Integer) whe
     genome
 end
 
-
-struct AdditiveUniformMutation{T<:AbstractVector} <: MutationStrategy{T}
-    bc::AdditiveMutation{T}
-    AdditiveUniformMutation{T}(rate, r, min, max) where T =
-        new{T}(AdditiveMutation{T}(rate, Uniform(-r, r), min, max))
-end
-
-struct AdditiveGaussianMutation{T<:AbstractVector} <: MutationStrategy{T}
-    bc::AdditiveMutation{T}
-    AdditiveGaussianMutation{T}(rate, σ, min, max) where T =
-        new{T}(AdditiveMutation{T}(rate, Normal(0, σ), min, max))
-end
-
-struct AdditiveDiscreteUniformMutation{T<:AbstractVector} <: MutationStrategy{T}
-    bc::AdditiveMutation{T}
-    AdditiveDiscreteUniformMutation{T}(rate, r, min, max) where T =
-        new{T}(AdditiveMutation{T}(rate, DiscreteUniform(-r, r), min, max))
-end
-
-const SpecialAdditiveMutation{T} = Union{AdditiveUniformMutation{T},
-                                         AdditiveGaussianMutation{T},
-                                         AdditiveDiscreteUniformMutation{T}}
-
-function mutate!(genome::T, strat::SpecialAdditiveMutation{T}, generation::Integer) where {T}
-    mutate!(genome, strat.bc, generation)
-end
