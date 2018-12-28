@@ -49,12 +49,50 @@ function setup!(strategy::PairWithBestSelection, model::AbstractEvolutionaryMode
 end
 
 function selection(population::Population{T}, strategy::PairWithBestSelection{T, P}) where {T, P}
-    μ = length(population) ÷ P
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(strategy.model)
-    Iterators.zip(Iterators.repeated(fittest, μ),
-                  repeatfunc(rand, μ, population))
+    PairWithBestSelectionIterator{P}(population, fittest)
 end
+
+struct PairWithBestSelectionIterator{P, M, T}
+    population::Population{T}
+    fittest::Individual{T}
+
+    function PairWithBestSelectionIterator{P}(population::Population{T},
+                                              fittest::Individual{T}) where {P, T}
+        M = length(population) ÷ P
+        new{P, M, T}(population, fittest)
+    end
+end
+
+function iterate(itr::PairWithBestSelectionIterator{P, M}, state = 0) where {P, M}
+    if state ≥ M
+        return nothing
+    else
+        (itr.fittest, rand(itr.population)), state + 1
+    end
+end
+
+# function iterate(itr::PairWithBestSelectionIterator{1})
+#     next = iterate(itr.population)
+#     if next == nothing
+#         return nothing
+#     else
+#         individual, state = next
+#         (itr.fittest, individual), state
+#     end
+# end
+
+# function iterate(itr::PairWithBestSelectionIterator{1}, state)
+#     next = iterate(itr.population, state)
+#     if next == nothing
+#         return nothing
+#     else
+#         individual, state = next
+#         (itr.fittest, individual), state
+#     end
+# end
+
 
 
 struct FitnessProportionateSelection{T, P, K, F} <: SelectionStrategy{T, P, K}
@@ -62,16 +100,33 @@ struct FitnessProportionateSelection{T, P, K, F} <: SelectionStrategy{T, P, K}
     temperature::Rate
 end
 
-@generated function selection(population::Population{T},
-                              strategy::FitnessProportionateSelection{T, P, K},
-                              generation::Integer) where {T, P, K}
-    rndix = fill(:(view(population, indices[rand(dist, M)])), K)
-    quote
+function selection(population::Population{T},
+                   strategy::FitnessProportionateSelection{T, P, K},
+                   generation::Integer) where {T, P, K}
+    function transform(f)
+        strategy.transform(f, strategy.temperature(generation))
+    end
+    FitnessProportionateSelectionIterator{P, K}(population, transform)
+end
+
+struct FitnessProportionateSelectionIterator{M, P, K, T}
+    population::Population{T}
+    transform
+
+    function FitnessProportionateSelectionIterator{P, K}(population::Population{T},
+                                                         transform) where {P, K, T}
         M = length(population) ÷ P
-        dist = Categorical(strategy.transform(fitness.(population),
-                                              strategy.temperature(generation)))
-        indices = eachindex(population)
-        Iterators.zip($(rndix...))
+        new{M, P, K, T}(population, transform)
+    end
+end
+
+function iterate(itr::FitnessProportionateSelectionIterator{M, P, K}, state = 0) where {M, P, K}
+    if state ≥ M
+        return nothing
+    else
+        dist = Categorical(itr.transform(fitness.(itr.population)))
+        indices = eachindex(itr.population)
+        ntuple(i -> itr.population[rand(dist)], Val{K}()), state + 1
     end
 end
 
@@ -96,24 +151,27 @@ const L1Selection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(l1nor
     L1Selection{T, P, K}(l1normalize, rate)
 
 
+
+
 struct TournamentSelection{T, S, P, K} <: SelectionStrategy{T, P, K} end
 
-struct TournamentSelectionIterator{S, P, K, T}
-    M::Int
+selection(population::Population{T}, strategy::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
+    TournamentSelectionIterator{S, P, K}(population)
+
+struct TournamentSelectionIterator{M, S, P, K, T}
     population::Population{T}
 
-    TournamentSelectionIterator{S, P, K}(population::Population{T}) where {S, P, K, T} =
-        new{S, P, K, T}(length(population) ÷ P, population)
-end
-
-function iterate(itr::TournamentSelectionIterator{S, P, K}, state = 0) where {S, P, K}
-    if state ≥ itr.M
-        return nothing
-    else
-        ntuple(i -> maximumby(fitness, randview(itr.population, S)), K), state + 1
+    function TournamentSelectionIterator{S, P, K}(population::Population{T}) where {S, P, K, T}
+        M = length(population) ÷ P
+        new{M, S, P, K, T}(population)
     end
 end
 
-selection(population::Population{T},
-          strategy::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
-    TournamentSelectionIterator{S, P, K}(population)
+function iterate(itr::TournamentSelectionIterator{M, S, P, K}, state = 0) where {M, S, P, K}
+    if state ≥ M
+        return nothing
+    else
+        ntuple(i -> maximumby(fitness, randview(itr.population, S)), Val{K}()), state + 1
+    end
+end
+
