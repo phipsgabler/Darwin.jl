@@ -4,11 +4,11 @@ export mutate!,
     MutationStrategy,
     setup!
     
-export BitFlip,
-    BoundedConvolution,
-    BoundedDiscreteUniformConvolution,
-    BoundedGaussianConvolution,
-    BoundedUniformConvolution,
+export BitFlipMutation,
+    AdditiveMutation,
+    AdditiveDiscreteUniformMutation,
+    AdditiveGaussianMutation,
+    AdditiveUniformMutation,
     LiftedMutation,
     PointwiseMutation
 
@@ -43,11 +43,11 @@ struct LiftedMutation{T, M, I} <: MutationStrategy{T}
 end
 
 
-struct BitFlip <: MutationStrategy{AbstractVector{Bool}}
+struct BitFlipMutation <: MutationStrategy{AbstractVector{Bool}}
     p::Rate
 end
 
-function mutate!(genome::AbstractVector{Bool}, strat::BitFlip, generation::Integer)
+function mutate!(genome::AbstractVector{Bool}, strat::BitFlipMutation, generation::Integer)
     for i in eachindex(genome)
         if rand() < strat.p(generation)
             genome[i] = !genome[i]
@@ -77,19 +77,19 @@ function mutate!(genome::T, strat::PointwiseMutation{T}, generation::Integer) wh
 end
 
 
-struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
+struct AdditiveMutation{T<:AbstractVector} <: MutationStrategy{T}
     rate::Rate
     tweak::Distribution{Univariate}
     min::Real
     max::Real
 
-    function BoundedConvolution{T}(rate, tweak::Distribution{Univariate}, min, max) where T
+    function AdditiveMutation{T}(rate, tweak::Distribution{Univariate}, min, max) where T
         @assert (mean(tweak) == 0) "`tweak` should have zero mean!"
         new{T}(rate, tweak, min, max)
     end
 end
 
-function mutate!(genome::T, strat::BoundedConvolution{T}, generation::Integer) where {T}
+function mutate!(genome::T, strat::AdditiveMutation{T}, generation::Integer) where {T}
     for i in eachindex(genome)
         if rand() ≤ strat.rate(generation)
             genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
@@ -100,28 +100,28 @@ function mutate!(genome::T, strat::BoundedConvolution{T}, generation::Integer) w
 end
 
 
-struct BoundedUniformConvolution{T<:AbstractVector} <: MutationStrategy{T}
-    bc::BoundedConvolution{T}
-    BoundedUniformConvolution{T}(rate, r, min, max) where T =
-        new{T}(BoundedConvolution{T}(rate, Uniform(-r, r), min, max))
+struct AdditiveUniformMutation{T<:AbstractVector} <: MutationStrategy{T}
+    bc::AdditiveMutation{T}
+    AdditiveUniformMutation{T}(rate, r, min, max) where T =
+        new{T}(AdditiveMutation{T}(rate, Uniform(-r, r), min, max))
 end
 
-struct BoundedGaussianConvolution{T<:AbstractVector} <: MutationStrategy{T}
-    bc::BoundedConvolution{T}
-    BoundedGaussianConvolution{T}(rate, σ, min, max) where T =
-        new{T}(BoundedConvolution{T}(rate, Normal(0, σ), min, max))
+struct AdditiveGaussianMutation{T<:AbstractVector} <: MutationStrategy{T}
+    bc::AdditiveMutation{T}
+    AdditiveGaussianMutation{T}(rate, σ, min, max) where T =
+        new{T}(AdditiveMutation{T}(rate, Normal(0, σ), min, max))
 end
 
-struct BoundedDiscreteUniformConvolution{T<:AbstractVector} <: MutationStrategy{T}
-    bc::BoundedConvolution{T}
-    BoundedDiscreteUniformConvolution{T}(rate, r, min, max) where T =
-        new{T}(BoundedConvolution{T}(rate, DiscreteUniform(-r, r), min, max))
+struct AdditiveDiscreteUniformMutation{T<:AbstractVector} <: MutationStrategy{T}
+    bc::AdditiveMutation{T}
+    AdditiveDiscreteUniformMutation{T}(rate, r, min, max) where T =
+        new{T}(AdditiveMutation{T}(rate, DiscreteUniform(-r, r), min, max))
 end
 
-const SpecialBoundedConvolution{T} = Union{BoundedUniformConvolution{T},
-                                           BoundedGaussianConvolution{T},
-                                           BoundedDiscreteUniformConvolution{T}}
+const SpecialAdditiveMutation{T} = Union{AdditiveUniformMutation{T},
+                                         AdditiveGaussianMutation{T},
+                                         AdditiveDiscreteUniformMutation{T}}
 
-function mutate!(genome::T, strat::SpecialBoundedConvolution{T}, generation::Integer) where {T}
+function mutate!(genome::T, strat::SpecialAdditiveMutation{T}, generation::Integer) where {T}
     mutate!(genome, strat.bc, generation)
 end

@@ -42,7 +42,7 @@ end
 
 
 const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Vector{Int}}}
-const EMMutation2 = LiftedMutation{EqualityMonster, BoundedDiscreteUniformConvolution{Vector{Int}}}
+const EMMutation2 = LiftedMutation{EqualityMonster, AdditiveDiscreteUniformMutation{Vector{Int}}}
 
 function mutate!(child::EqualityMonster, strat::Union{EMMutation, EMMutation2}, generation::Integer)
     mutate!(child.abcde, strat.inner, generation)
@@ -63,7 +63,7 @@ end
     # @test isinf(fitness(result.population[fittest]))
     
     # let's go crazy and mutate 20% of the time
-    r1 = run_with(PairWithBest{EqualityMonster, 1}(),
+    r1 = run_with(PairWithBestSelection{EqualityMonster, 1}(),
                   EMCrossover(),
                   EMMutation(0.2, DiscreteUniform(0, 42)),
                   300)

@@ -6,9 +6,9 @@ export select,
     SelectionResult,
     setup!
 
-export FitnessProportionate,
+export FitnessProportionateSelection,
     L1Selection,
-    PairWithBest,
+    PairWithBestSelection,
     SoftmaxSelection,
     TournamentSelection
 
@@ -29,26 +29,26 @@ selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
     selection(population, strategy)
 
 
-struct TruncationSelection{T, P} <: SelectionStrategy{T, P, 1} end
+# struct TruncationSelection{T, P} <: SelectionStrategy{T, P, 1} end
 
-function selection(population::Population{T}, strategy::TrunctionSelection{T, P}) where {T, P}
-    μ = length(population) ÷ P
-    partialsort(model.population, 1:μ, by = fitness, rev = true)
-end
+# function selection(population::Population{T}, strategy::TruncationSelection{T, P}) where {T, P}
+#     μ = length(population) ÷ P
+#     partialsort(model.population, 1:μ, by = fitness, rev = true)
+# end
 
 
-mutable struct PairWithBest{T, P} <: SelectionStrategy{T, P, 2}
+mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{T, P, 2}
     model::AbstractEvolutionaryModel
 
-    PairWithBest{T, P}() where {T, P} = new{T, P}()
+    PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
 end
 
-function setup!(strategy::PairWithBest, model::AbstractEvolutionaryModel)
+function setup!(strategy::PairWithBestSelection, model::AbstractEvolutionaryModel)
     strategy.model = model
     strategy
 end
 
-function selection(population::Population{T}, strategy::PairWithBest{T, P}) where {T, P}
+function selection(population::Population{T}, strategy::PairWithBestSelection{T, P}) where {T, P}
     μ = length(population) ÷ P
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(strategy.model)
@@ -57,13 +57,13 @@ function selection(population::Population{T}, strategy::PairWithBest{T, P}) wher
 end
 
 
-struct FitnessProportionate{T, P, K, F} <: SelectionStrategy{T, P, K}
+struct FitnessProportionateSelection{T, P, K, F} <: SelectionStrategy{T, P, K}
     transform::F
     temperature::Rate
 end
 
 @generated function selection(population::Population{T},
-                              strategy::FitnessProportionate{T, P, K},
+                              strategy::FitnessProportionateSelection{T, P, K},
                               generation::Integer) where {T, P, K}
     rndix = fill(:(view(population, indices[rand(dist, M)])), K)
     quote
@@ -87,11 +87,11 @@ function softmax(f, θ = 1)
     y ./ sum(y)
 end
 
-const SoftmaxSelection{T, P, K} = FitnessProportionate{T, P, K, typeof(softmax)}
+const SoftmaxSelection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(softmax)}
 (::Type{SoftmaxSelection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
     SoftmaxSelection{T, P, K}(softmax, rate)
 
-const L1Selection{T, P, K} = FitnessProportionate{T, P, K, typeof(l1normalize)}
+const L1Selection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(l1normalize)}
 (::Type{L1Selection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
     L1Selection{T, P, K}(l1normalize, rate)
 
