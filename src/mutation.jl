@@ -41,14 +41,12 @@ end
 
 
 struct BitFlipMutation <: MutationStrategy{AbstractVector{Bool}}
-    p::Rate
+    rate::Rate
 end
 
 function mutate!(genome::AbstractVector{Bool}, strat::BitFlipMutation, generation::Integer)
     for i in eachindex(genome)
-        if rand() < strat.p(generation)
-            genome[i] = !genome[i]
-        end
+        (rand() < strat.rate(generation)) && (genome[i] = !genome[i])
     end
 
     genome
