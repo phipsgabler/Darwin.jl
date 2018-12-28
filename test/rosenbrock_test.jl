@@ -21,25 +21,6 @@ Bounds = Uniform(-2.0, 2.0)
 end
 
 
-# struct RosenbrockSelection <: SelectionStrategy{NTuple{2, Individual{Entity}}}
-#     initial_temperature::Float64
-#     final_temperature::Float64
-#     temperature_decay::Float64
-# end
-
-# function selection(model, generation)
-#     strat = model.strat
-#     temperature = max(strat.initial_temperature * strat.temperature_decay ^ (generation - 1),
-#                       strat.final_temperature)
-    
-#     # softmax selection
-#     probabilities = softmax(assess!.(model.population, model.fitness) ./ temperature)
-#     D = Categorical(probabilities)
-
-#     ntuple(i -> model.population[rand(D)], 2)
-# end
-
-
 function run_with(selection, crossover, mutation, generations)
     initial_population = Individual.([rand(Bounds, 2) for _ in 1:128])
     model = GAModel(initial_population, fitness, selection, crossover, mutation)
