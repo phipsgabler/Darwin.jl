@@ -35,12 +35,11 @@ end
 
 
 """
-    crossover!(parents, strategy[, generation]) -> children
+    crossover!(parents::Union{Family, NTuple}, strategy, generation) -> children
 
-Perform crossover between `parents`.
+Perform crossover between `parents`.  You only need to define the method for `parents` being an
+`NTuple`; this method will be automatically lifted to `Family`s (i.e., tuples of `Individual`s).
 """
-# crossover!(parents::Family{T, K}, strategy::CrossoverStrategy{T, K, P}) where {T, K, P} =
-#     Individual.(crossover!(genome.(parents), strategy))
 crossover!(parents::Family{T, K},
            strategy::CrossoverStrategy{T, K, P},
            generation::Int) where {T, K, P} =
@@ -50,7 +49,8 @@ crossover!(parents::Family{T, K},
 
 struct NoCrossover{T, N} <: CrossoverStrategy{T, N, N} end
 
-crossover!(parents::Family{<:Any, N}, strategy::NoCrossover{N}) where {N} = parents
+crossover!(parents::NTuple{N}, strategy::NoCrossover{N}, generation::Integer) where {N} =
+    parents
 
 
 struct ArithmeticCrossover{T<:AbstractVector, K, P} <: CrossoverStrategy{T, K, P}
@@ -83,7 +83,8 @@ function crossover!(parents::NTuple{2, T},
     (map(ifelse, crossover_points, parents...),)
 end
 
-function crossover!(parents::NTuple{2, T}, strategy::UniformCrossover{T, 2, 2},
+function crossover!(parents::NTuple{2, T},
+                    strategy::UniformCrossover{T, 2, 2},
                     generation::Integer) where {T}
     crossover_points = rand(length(parents[1])) .≤ strategy.p(generation)
     map(ifelse, crossover_points, parents...), map(ifelse, .~crossover_points, parents...)

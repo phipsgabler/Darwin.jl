@@ -50,7 +50,6 @@ end
 
 function selection(population::Population{T}, strategy::PairWithBest{T, P}) where {T, P}
     M = length(population) ÷ P
-    fittest = findfittest(strategy.model)
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(strategy.model)
     Iterators.zip(Iterators.repeated(fittest, M),

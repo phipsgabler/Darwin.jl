@@ -17,15 +17,6 @@ abstract type MutationStrategy{G} end
 setup!(strategy::MutationStrategy, model) = strategy
 
 
-struct LiftedMutation{T, M, I} <: MutationStrategy{T}
-    inner::M
-
-    LiftedMutation{T}(strat::M) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(strat)
-    LiftedMutation{T, M}(args...) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(M(args...))
-end
-
-
-
 """
     mutate!(genome, strategy, generation) -> genome
     mutate!(individual, strategy, generation) -> individual
@@ -42,6 +33,14 @@ end
 struct NoMutation{T} <: MutationStrategy{T} end
 
 mutate!(genome::Any, strat::NoMutation) = genome
+
+
+struct LiftedMutation{T, M, I} <: MutationStrategy{T}
+    inner::M
+
+    LiftedMutation{T}(strat::M) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(strat)
+    LiftedMutation{T, M}(args...) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(M(args...))
+end
 
 
 struct BitFlip <: MutationStrategy{AbstractVector{Bool}}
