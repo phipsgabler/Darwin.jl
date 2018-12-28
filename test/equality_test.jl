@@ -44,8 +44,8 @@ end
 const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Vector{Int}}}
 const EMMutation2 = LiftedMutation{EqualityMonster, BoundedDiscreteUniformConvolution{Vector{Int}}}
 
-function mutate!(child::EqualityMonster, strat::Union{EMMutation, EMMutation2})
-    mutate!(child.abcde, strat.inner)
+function mutate!(child::EqualityMonster, strat::Union{EMMutation, EMMutation2}, generation::Integer)
+    mutate!(child.abcde, strat.inner, generation)
     child
 end
 

@@ -3,8 +3,11 @@ export ConstantRate,
     LinearRate,
     Rate
 
+import Base: convert
 
 abstract type Rate end
+
+convert(::Type{Rate}, f::Float64) = ConstantRate(f)
 
 
 struct ConstantRate <: Rate

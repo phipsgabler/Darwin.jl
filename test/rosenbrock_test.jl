@@ -51,7 +51,7 @@ end
 @testset "Rosenbrock" begin
     r1 = run_with(SoftmaxSelection{Entity, 2, 2}(ExponentialRate(1.0, 0.5, 0.999)),
                   ArithmeticCrossover{Entity, 2, 2}(ConstantRate(0.7)),
-                  PointwiseMutation{Entity}(0.2, Bounds),
+                  PointwiseMutation{Entity}(ConstantRate(0.2), Bounds),
                   10_000)
 
     @test isapprox(rosenbrock(r1.fittest.genome), 0.0, atol = 0.01)
@@ -59,7 +59,7 @@ end
 
     r2 = run_with(TournamentSelection{Entity, 5, 1, 2}(),
                   UniformCrossover{Entity, 2, 1}(LinearRate(0.8, 0.2, 1/20)),
-                  BoundedUniformConvolution{Entity}(0.3, 2.0, -2.0, 2.0),
+                  BoundedUniformConvolution{Entity}(ConstantRate(0.3), 2.0, -2.0, 2.0),
                   10_000)
 
     @test isapprox(rosenbrock(r2.fittest.genome), 0.0, atol = 0.01)
@@ -67,7 +67,7 @@ end
 
     r3 = run_with(L1Selection{Entity, 2, 2}(),
                   ArithmeticCrossover{Entity, 2, 2}(ConstantRate(0.7)),
-                  BoundedGaussianConvolution{Entity}(0.3, 2.0, -2.0, 2.0),
+                  BoundedGaussianConvolution{Entity}(ConstantRate(0.3), 2.0, -2.0, 2.0),
                   10_000)
 
     @test_skip isapprox(rosenbrock(r3.fittest.genome), 0.0, atol = 0.01)

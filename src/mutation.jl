@@ -27,14 +27,11 @@ end
 
 
 """
-    mutate!(genome, strategy[, generation]) -> genome
+    mutate!(genome, strategy, generation) -> genome
     mutate!(individual, strategy, generation) -> individual
 
 Mutate `genome` or `individual.genome` in place.  You only need to define the needed genome form.
 """
-mutate!(genome::G, strategy::MutationStrategy{G}, generation::Integer) where {G} =
-    mutate!(genome, strategy)
-
 function mutate!(individual::Individual{G}, strategy::MutationStrategy{G},
                  generation::Integer) where {G}
     mutate!(individual.genome, strategy, generation)
@@ -48,12 +45,12 @@ mutate!(genome::Any, strat::NoMutation) = genome
 
 
 struct BitFlip <: MutationStrategy{AbstractVector{Bool}}
-    p::Float64
+    p::Rate
 end
 
-function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
+function mutate!(genome::AbstractVector{Bool}, strat::BitFlip, generation::Integer)
     for i in eachindex(genome)
-        if rand() < strat.p
+        if rand() < strat.p(generation)
             genome[i] = !genome[i]
         end
     end
@@ -63,7 +60,7 @@ end
 
 
 struct PointwiseMutation{T<:AbstractVector} <: MutationStrategy{T}
-    rate::Float64
+    rate::Rate
     tweak::Distribution{Univariate}
 
     PointwiseMutation{T}(rate, tweak::Distribution{Univariate, Discrete}) where {T<:AbstractVector{<:Integer}} =
@@ -72,9 +69,9 @@ struct PointwiseMutation{T<:AbstractVector} <: MutationStrategy{T}
         new{T}(rate, tweak)
 end
 
-function mutate!(genome::T, strat::PointwiseMutation{T}) where {T}
+function mutate!(genome::T, strat::PointwiseMutation{T}, generation::Integer) where {T}
     for i in eachindex(genome)
-        (rand() < strat.rate) && (genome[i] = rand(strat.tweak))
+        (rand() < strat.rate(generation)) && (genome[i] = rand(strat.tweak))
     end
 
     genome
@@ -82,7 +79,7 @@ end
 
 
 struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
-    rate::Float64
+    rate::Rate
     tweak::Distribution{Univariate}
     min::Real
     max::Real
@@ -93,9 +90,9 @@ struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
     end
 end
 
-function mutate!(genome::T, strat::BoundedConvolution{T}) where {T}
+function mutate!(genome::T, strat::BoundedConvolution{T}, generation::Integer) where {T}
     for i in eachindex(genome)
-        if rand() ≤ strat.rate
+        if rand() ≤ strat.rate(generation)
             genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
         end
     end
@@ -126,6 +123,6 @@ const SpecialBoundedConvolution{T} = Union{BoundedUniformConvolution{T},
                                            BoundedGaussianConvolution{T},
                                            BoundedDiscreteUniformConvolution{T}}
 
-function mutate!(genome::T, strat::SpecialBoundedConvolution{T}) where {T}
-    mutate!(genome, strat.bc)
+function mutate!(genome::T, strat::SpecialBoundedConvolution{T}, generation::Integer) where {T}
+    mutate!(genome, strat.bc, generation)
 end
