@@ -25,7 +25,7 @@ Select parts of population of a population to be used in breeding.  Should compa
 `isless`, if that is relevant.
 """
 selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
-          generation::Int) where {T, P, K} =
+          generation::Integer) where {T, P, K} =
     selection(population, strategy)
 
 
@@ -60,35 +60,41 @@ end
 
 struct FitnessProportionate{T, P, K, F} <: SelectionStrategy{T, P, K}
     transform::F
+    temperature::Rate
 end
 
 @generated function selection(population::Population{T},
-                              strategy::FitnessProportionate{T, P, K}) where {T, P, K}
+                              strategy::FitnessProportionate{T, P, K},
+                              generation::Integer) where {T, P, K}
     rndix = fill(:(view(population, indices[rand(dist, M)])), K)
     quote
         M = length(population) ÷ P
-        dist = Categorical(strategy.transform(fitness.(population)))
+        dist = Categorical(strategy.transform(fitness.(population),
+                                              strategy.temperature(generation)))
         indices = eachindex(population)
         Iterators.zip($(rndix...))
     end
 end
 
-function l1normalize(f)
+function l1normalize(f, _)
     y = f .- minimum(f)
     s = sum(y)
     s == 0 ? fill(1/length(f), size(f)) : y ./ s
 end
 
-function softmax(f)
-    y = exp.(f .- maximum(f))
+function softmax(f, θ = 1)
+    y = float(f) ./ θ
+    y .= exp.(y .- maximum(y))
     y ./ sum(y)
 end
 
 const SoftmaxSelection{T, P, K} = FitnessProportionate{T, P, K, typeof(softmax)}
-(::Type{SoftmaxSelection{T, P, K}})() where {T, P, K} = SoftmaxSelection{T, P, K}(softmax)
+(::Type{SoftmaxSelection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
+    SoftmaxSelection{T, P, K}(softmax, rate)
 
 const L1Selection{T, P, K} = FitnessProportionate{T, P, K, typeof(l1normalize)}
-(::Type{L1Selection{T, P, K}})() where {T, P, K} = L1Selection{T, P, K}(l1normalize)
+(::Type{L1Selection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
+    L1Selection{T, P, K}(l1normalize, rate)
 
 
 struct TournamentSelection{T, S, P, K} <: SelectionStrategy{T, P, K} end

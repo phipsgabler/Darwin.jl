@@ -49,11 +49,12 @@ end
 
 
 @testset "Rosenbrock" begin
-    r1 = run_with(SoftmaxSelection{Entity, 2, 2}(),
+    r1 = run_with(SoftmaxSelection{Entity, 2, 2}(ExponentialRate(1.0, 0.5, 0.999)),
                   ArithmeticCrossover{Entity, 2, 2}(0.7),
-                  PointwiseMutation{Entity}(0.3, Bounds),
+                  PointwiseMutation{Entity}(0.2, Bounds),
                   10_000)
-    
+
+    @show r1.fittest
     @test isapprox(rosenbrock(r1.fittest.genome), 0.0, atol = 0.01)
     @test all(isapprox.(r1.fittest.genome, [1.0, 1.0], atol = 0.15))
 

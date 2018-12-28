@@ -57,6 +57,8 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlip)
             genome[i] = !genome[i]
         end
     end
+
+    genome
 end
 
 
@@ -97,6 +99,8 @@ function mutate!(genome::T, strat::BoundedConvolution{T}) where {T}
             genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
         end
     end
+
+    genome
 end
 
 

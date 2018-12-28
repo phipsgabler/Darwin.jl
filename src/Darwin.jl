@@ -11,6 +11,7 @@ const FitnessValue = Float64
 
 include("utils.jl")
 include("individual.jl")
+include("rates.jl")
 include("fitness.jl")
 include("selection.jl")
 include("mutation.jl")
