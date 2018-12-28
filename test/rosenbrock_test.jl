@@ -59,7 +59,7 @@ end
 
     r2 = run_with(TournamentSelection{Entity, 5, 1, 2}(),
                   UniformCrossover{Entity, 2, 1}(),
-                  PointwiseMutation{Entity}(0.3, Bounds),
+                  BoundedUniformConvolution{Entity}(0.3, 2.0, -2.0, 2.0),
                   10_000)
 
     @test isapprox(rosenbrock(r2.fittest.genome), 0.0, atol = 0.01)

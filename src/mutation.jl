@@ -81,14 +81,12 @@ end
 struct BoundedConvolution{T<:AbstractVector} <: MutationStrategy{T}
     rate::Float64
     tweak::Distribution{Univariate, Continuous}
-    min::T
-    max::T
+    min::Real
+    max::Real
 
-    function BoundedConvolution(rate, tweak::Distribution{Univariate, Continuous}, min, max)
-        T = eltype(tweak)
-        @assert (mean(tweak) == zero(T)) "`tweak` should have zero mean!"
-        TT = promote_type(typeof(min), typeof(max), T)
-        new{AbstractVector{TT}}(convert(Float64, rate), r, convert(TT, min), convert(TT, max))
+    function BoundedConvolution{T}(rate, tweak::Distribution{Univariate, Continuous}, min, max) where T
+        @assert (mean(tweak) == 0) "`tweak` should have zero mean!"
+        new{T}(rate, tweak, min, max)
     end
 end
 
@@ -100,5 +98,20 @@ function mutate!(genome::T, strat::BoundedConvolution{T}) where {T}
     end
 end
 
-BoundedUniformConvolution(rate, r, min, max) = BoundedConvolution(rate, Uniform(-r, r), min, max)
-BoundedGaussianConvolution(rate, σ, min, max) = BoundedConvolution(rate, Normal(0, σ), min, max)
+
+struct BoundedUniformConvolution{T<:AbstractVector} <: MutationStrategy{T}
+    bc::BoundedConvolution{T}
+    BoundedUniformConvolution{T}(rate, r, min, max) where T =
+        new{T}(BoundedConvolution{T}(rate, Uniform(-r, r), min, max))
+end
+
+struct BoundedGaussianConvolution{T<:AbstractVector} <: MutationStrategy{T}
+    bc::BoundedConvolution{T}
+    BoundedGaussianConvolution{T}(rate, σ, min, max) where T =
+        new{T}(BoundedConvolution{T}(rate, Normal(0, σ), min, max))
+end
+
+function mutate!(genome::T,
+                 strat::Union{BoundedUniformConvolution{T}, BoundedGaussianConvolution{T}}) where {T}
+    mutate!(genome, strat.bc)
+end
