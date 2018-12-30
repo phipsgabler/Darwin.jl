@@ -12,6 +12,7 @@ mutable struct GAModel{T, F<:AbstractFitness{>:T}} <: AbstractEvolutionaryModel
         new{T, typeof(fitness)}(population, fitness)
 end
 
+
 findfittest!(model::GAModel) = model.fittest = maximumby(i -> assess!(i, model.fitness),
                                                          model.population)
 findfittest(model::GAModel) = model.fittest

@@ -45,7 +45,7 @@ end
 
 
 const Population{T} = Vector{Individual{T}}
-
+(::Type{Population})(genomes) = Individual.(collect(genomes))
 
 const Family{T, N} = NTuple{N, Individual{T}}
 (::Type{Family{T, N}})(args::Vararg{T, N}) where {T,N} = args
