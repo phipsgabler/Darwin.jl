@@ -23,8 +23,9 @@ end
 
 function run_with(selection, crossover, mutation, generations)
     initial_population = Individual.([rand(Bounds, 2) for _ in 1:128])
-    model = GAModel(initial_population, fitness, selection, crossover, mutation)
-    strat = strategy(Verbose(GAStrategy{Entity}()), MaxIter(generations))
+    model = GAModel(initial_population, fitness)
+    strat = strategy(Verbose(GAStrategy{Entity}(selection, crossover, mutation)),
+                     MaxIter(generations))
     learn!(model, strat)
 end
 
