@@ -26,11 +26,20 @@ mutable struct GAStrategy{T, P, K,
     mutation::Fm
     cache::Population{T}
 
-    GAStrategy{T}(selection::SelectionOperator{>:T, P, K},
-                  crossover::CrossoverOperator{>:T, K, P},
-                  mutation::MutationOperator{>:T}) where {T, P, K} =
-                      new{T, P, K, typeof(selection), typeof(crossover), typeof(mutation)}(
-                          selection, crossover, mutation, Population{T}())
+    function GAStrategy(selection::SelectionOperator{U, P, K},
+                        crossover::CrossoverOperator{V, K, P},
+                        mutation::MutationOperator{W}) where {U, V, W, P, K}
+        T = typejoin(U, V, W)
+        S, C, M = typeof(selection), typeof(crossover), typeof(mutation)
+        new{T, P, K, S, C, M}(selection, crossover, mutation, Population{T}())
+    end
+
+    function GAStrategy{T}(selection::SelectionOperator{>:T, P, K},
+                           crossover::CrossoverOperator{>:T, K, P},
+                           mutation::MutationOperator{>:T}) where {T, P, K}
+        S, C, M = typeof(selection), typeof(crossover), typeof(mutation)
+        new{T, P, K, S, C, M}(selection, crossover, mutation, Population{T}())
+    end
 end
 
 preparecache!(strategy::GAStrategy, n) = sizehint!(empty!(strategy.cache), n)
