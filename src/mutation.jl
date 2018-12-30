@@ -1,7 +1,7 @@
 using Distributions
 
 export mutate!,
-    MutationStrategy,
+    MutationOperator,
     setup!
     
 export BitFlipMutation,
@@ -9,38 +9,38 @@ export BitFlipMutation,
     LiftedMutation,
     PointwiseMutation
 
-abstract type MutationStrategy{G} end
+abstract type MutationOperator{G} end
 
-setup!(strategy::MutationStrategy, model) = strategy
+setup!(operator::MutationOperator, model) = operator
 
 
 """
-    mutate!(genome, strategy, generation) -> genome
-    mutate!(individual, strategy, generation) -> individual
+    mutate!(genome, operator, generation) -> genome
+    mutate!(individual, operator, generation) -> individual
 
 Mutate `genome` or `individual.genome` in place.  You only need to define the needed genome form.
 """
-function mutate!(individual::Individual{G}, strategy::MutationStrategy{G},
+function mutate!(individual::Individual{G}, operator::MutationOperator{G},
                  generation::Integer) where {G}
-    mutate!(individual.genome, strategy, generation)
+    mutate!(individual.genome, operator, generation)
     individual
 end
 
 
-struct NoMutation{T} <: MutationStrategy{T} end
+struct NoMutation{T} <: MutationOperator{T} end
 
 mutate!(genome::Any, strat::NoMutation) = genome
 
 
-struct LiftedMutation{T, M, I} <: MutationStrategy{T}
+struct LiftedMutation{T, M, I} <: MutationOperator{T}
     inner::M
 
-    LiftedMutation{T}(strat::M) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(strat)
-    LiftedMutation{T, M}(args...) where {T, I, M<:MutationStrategy{I}} = new{T, M, I}(M(args...))
+    LiftedMutation{T}(strat::M) where {T, I, M<:MutationOperator{I}} = new{T, M, I}(strat)
+    LiftedMutation{T, M}(args...) where {T, I, M<:MutationOperator{I}} = new{T, M, I}(M(args...))
 end
 
 
-struct BitFlipMutation <: MutationStrategy{AbstractVector{Bool}}
+struct BitFlipMutation <: MutationOperator{AbstractVector{Bool}}
     rate::Rate
 end
 
@@ -53,7 +53,7 @@ function mutate!(genome::AbstractVector{Bool}, strat::BitFlipMutation, generatio
 end
 
 
-struct PointwiseMutation{T<:AbstractVector} <: MutationStrategy{T}
+struct PointwiseMutation{T<:AbstractVector} <: MutationOperator{T}
     rate::Rate
     tweak::Distribution{Univariate}
 
@@ -72,7 +72,7 @@ function mutate!(genome::T, strat::PointwiseMutation{T}, generation::Integer) wh
 end
 
 
-struct AdditiveMutation{T<:AbstractVector, D<:Distribution{Univariate}} <: MutationStrategy{T}
+struct AdditiveMutation{T<:AbstractVector, D<:Distribution{Univariate}} <: MutationOperator{T}
     rate::Rate
     tweak::D
     min::Real

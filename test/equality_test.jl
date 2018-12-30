@@ -36,8 +36,8 @@ end
 
 const EMCrossover = LiftedCrossover{EqualityMonster, UniformCrossover{Vector{Int}, 2, 1}}
 
-function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, strategy::EMCrossover, generation::Integer)
-    EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), strategy.inner, generation))
+function crossover!((p₁, p₂)::NTuple{2, EqualityMonster}, operator::EMCrossover, generation::Integer)
+    EqualityMonster.(crossover!((p₁.abcde, p₂.abcde), operator.inner, generation))
 end
 
 
@@ -54,7 +54,7 @@ end
 function run_with(selection, crossover, mutation, generations)
     initial_population = rand(Individual{EqualityMonster}, 64)
     model = GAModel(initial_population, fitness, selection, crossover, mutation)
-    strat = strategy(Verbose(GAEvolver{EqualityMonster}()), MaxIter(generations))
+    strat = strategy(Verbose(GAStrategy{EqualityMonster}()), MaxIter(generations))
     learn!(model, strat)
 end
 

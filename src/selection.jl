@@ -2,7 +2,7 @@ using Distributions
 import Base: iterate
 
 export select,
-    SelectionStrategy,
+    SelectionOperator,
     SelectionResult,
     setup!
 
@@ -13,44 +13,44 @@ export FitnessProportionateSelection,
     TournamentSelection
 
 
-abstract type SelectionStrategy{T, P, K} end
+abstract type SelectionOperator{T, P, K} end
 
-setup!(strategy::SelectionStrategy, model::AbstractEvolutionaryModel) = strategy
+setup!(operator::SelectionOperator, model::AbstractEvolutionaryModel) = operator
 
 
 """
-    selection(population, strategy[, generation]) -> selection
+    selection(population, operator[, generation]) -> selection
 
 Select parts of population of a population to be used in breeding.  Should compare fitnesses using 
 `isless`, if that is relevant.
 """
-selection(population::Population{T}, strategy::SelectionStrategy{T, P, K},
+selection(population::Population{T}, operator::SelectionOperator{T, P, K},
           generation::Integer) where {T, P, K} =
-    selection(population, strategy)
+    selection(population, operator)
 
 
-# struct TruncationSelection{T, P} <: SelectionStrategy{T, P, 1} end
+# struct TruncationSelection{T, P} <: SelectionOperator{T, P, 1} end
 
-# function selection(population::Population{T}, strategy::TruncationSelection{T, P}) where {T, P}
+# function selection(population::Population{T}, operator::TruncationSelection{T, P}) where {T, P}
 #     μ = length(population) ÷ P
 #     partialsort(model.population, 1:μ, by = fitness, rev = true)
 # end
 
 
-mutable struct PairWithBestSelection{T, P} <: SelectionStrategy{T, P, 2}
+mutable struct PairWithBestSelection{T, P} <: SelectionOperator{T, P, 2}
     model::AbstractEvolutionaryModel
 
     PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
 end
 
-function setup!(strategy::PairWithBestSelection, model::AbstractEvolutionaryModel)
-    strategy.model = model
-    strategy
+function setup!(operator::PairWithBestSelection, model::AbstractEvolutionaryModel)
+    operator.model = model
+    operator
 end
 
-function selection(population::Population{T}, strategy::PairWithBestSelection{T, P}) where {T, P}
+function selection(population::Population{T}, operator::PairWithBestSelection{T, P}) where {T, P}
     # simple naive groupings that pair the best entitiy with every other
-    fittest = findfittest(strategy.model)
+    fittest = findfittest(operator.model)
     PairWithBestSelectionIterator{P}(population, fittest)
 end
 
@@ -95,16 +95,16 @@ end
 
 
 
-struct FitnessProportionateSelection{T, P, K, F} <: SelectionStrategy{T, P, K}
+struct FitnessProportionateSelection{T, P, K, F} <: SelectionOperator{T, P, K}
     transform::F
     temperature::Rate
 end
 
 function selection(population::Population{T},
-                   strategy::FitnessProportionateSelection{T, P, K},
+                   operator::FitnessProportionateSelection{T, P, K},
                    generation::Integer) where {T, P, K}
     function transform(f)
-        strategy.transform(f, strategy.temperature(generation))
+        operator.transform(f, operator.temperature(generation))
     end
     FitnessProportionateSelectionIterator{P, K}(population, transform)
 end
@@ -153,9 +153,9 @@ const L1Selection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(l1nor
 
 
 
-struct TournamentSelection{T, S, P, K} <: SelectionStrategy{T, P, K} end
+struct TournamentSelection{T, S, P, K} <: SelectionOperator{T, P, K} end
 
-selection(population::Population{T}, strategy::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
+selection(population::Population{T}, operator::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
     TournamentSelectionIterator{S, P, K}(population)
 
 struct TournamentSelectionIterator{M, S, P, K, T}
