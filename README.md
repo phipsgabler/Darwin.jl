@@ -91,6 +91,23 @@ Population(rand(Genome, N))
 
 The type `T` should implement `rand`, `copy`, and have an `AbstractFitness{T}` object associated with it.
 
+#### Rate Parameters
+
+The abstract type `Rate` should be used at places for rate parameters, such as tempering factors or
+mutation rates.  An implementation of `Rate` should be callable on positive `Integer`s, representing
+the rate at a certain generation.
+
+There are three pre-provided schemes:
+
+```julia
+ConstantRate(α)
+LinearRate(initial_rate, final_rate, slope)
+ExponentialRate(initial_rate, final_rate, decay)
+```
+
+The first just returns the constant `α` all the time.  Linear and exponential rates start at their
+`initial_rate`s, and decrease until `final_rate`.
+
 
 ## Strategies
 
