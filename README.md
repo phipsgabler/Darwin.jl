@@ -154,7 +154,7 @@ a fitness function of type `AbstractFitness`, and selection, crossover, and muta
 of suitable characteristics (with the numbers matching).
 
 
-## Fitness
+## Fitness Functions
 
 Evolutionary models in general require a fitness function for assigning quality to the
 individuals in question.  Since Julia functions are not parametrized by their input and 
@@ -184,6 +184,89 @@ end)
 ```
 
 ## Selection Operators
+
+Selection operators inherit from the abstract type `SelectionOperator{T, P, K}`, with the parameters 
+described above.  
+
+To define your own selection operator, you need to define a type inheriting from `SelectionOperator`
+with the right type parameters.  If your operator only works for certain kinds of genomes, or for 
+certain numbers `P` and `K`, you should make those constant in the inheriting clause.  You then
+have to implement the actual selection by overloading the function `selection` with one of the
+following signatures:
+
+```julia
+selection(population::Population{T}, operator::YourOperator{T, P, K}) where {T, P, K}
+selection(population::Population{T}, operator::YourOperator{T, P, K}, generation::Integer) where {T, P, K}
+```
+
+The second method defaults to the first one and can be used if the generation is used in 
+calculating the selection (e.g. if you use some kind of rate parameter).  The `selection` function
+should return an iterable of `Family{T, K}`, which is a k-tuple of `Individual{T}` (which is 
+already the of `population`).  
+
+Usually you can use a custom `YourOperatorsIterator` for this, which implements the actual 
+selection logic, and have `selection` just set up this iterator.  In this way, you can in the
+iterator focus on one `Family` at a time, which is easier to think about. As an example, 
+the main parts of `TournamentSelection` are implemented in such a style:
+
+```julia
+selection(population::Population{T}, operator::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
+    TournamentSelectionIterator{S, P, K}(population)
+    
+function iterate(itr::TournamentSelectionIterator{M, S, P, K}, state = 0) where {M, S, P, K}
+    if state ≥ M
+        return nothing
+    else
+        ntuple(i -> maximumby(fitness, randview(itr.population, S)), Val{K}()), state + 1
+    end
+end
+```
+
+Note that the `ntuple` function is used with a `Val` parameter here.  `randview` is a custom
+function returning a random view of size `S`. 
+
+If you need to perform some initialization of the operator with the model, you can overload 
+`setup!(operator, model)`; this is, for example, used to access the `fittest` property of a 
+model in `PairWithBestSelection`.
+
+### Pair-With-Best Selection
+
+```julia
+PairWithBestSelection{T, P} <: SelectionOperator{T, P, 2}
+PairWithBestSelection{T, P}()
+```
+
+Selects `length(population) ÷ P` 2-tuples of random individuals, paired with the currently 
+best individual (obtained from the `GAModel` through its `fittest` property).
+
+### Fitness-Proportionate Selection
+
+```
+FitnessProportionateSelection{T, P, K, F} <: SelectionOperator{T, P, K}
+```
+
+Selects random `K`-tuples from the population, according to a categorical distribution
+over individuals given by `t(fitness.(population))`, where `t(fs) = transform(fs, temperature(generation))`.
+`transform` needs to be a function turning a vector of arbitrary fitness values into
+a discrete probability distribution, with `temperature` as a second parameter.
+
+There are two pre-provided transforms with factory constructors:
+
+```julia
+SoftmaxSelection{T, P, K}(rate = 1.0)
+L1Selection{T, P, K}()
+```
+
+which use the [softmax function](https://en.wikipedia.org/wiki/Softmax_function) with
+temperature, and rescaling by its sum (taking care of ties and negative values).
+
+### [Tournament Selection](https://en.wikipedia.org/wiki/Tournament_selection)
+
+```julia
+TournamentSelection{T, S, P, K} <: SelectionOperator{T, P, K}
+```
+
+Selects `K` times the best of `S` randomly chosen individuals.
 
 ## Crossover Operators
 
