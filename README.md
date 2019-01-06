@@ -154,6 +154,35 @@ a fitness function of type `AbstractFitness`, and selection, crossover, and muta
 of suitable characteristics (with the numbers matching).
 
 
+## Fitness
+
+Evolutionary models in general require a fitness function for assigning quality to the
+individuals in question.  Since Julia functions are not parametrized by their input and 
+output types, an `AbstractFitness{T}` is required by this package, representing a fitness
+operator on genomes of type `T`.  Such an operator should be callable on values of `T`.
+
+The return type should be `Float64`, since that is what is cached in `Individual{T}`
+and can represent any total order anyway.  In theory, it is enough to return something 
+that can be compared using `less` and converted to `Float64`. 
+
+Since in most cases, the fitness will be implemented by a simple function, there is a
+macro `@fitness` which will produce a constant of type 
+`FitnessFunction{T, F} <: AbstractFitness{T}` wrapping that function:
+
+```julia
+@fitness function fitness(x::Entity)
+    -rosenbrock(x)
+end
+```
+
+expands to
+
+```julia
+const fitness = FitnessFunction{Entity}(function ##fitness#2342(x::Entity)
+    -rosenbrock(x)
+end)
+```
+
 ## Selection Operators
 
 ## Crossover Operators
