@@ -329,7 +329,7 @@ PointwiseMutation{G}(rate::Rate, tweak::Distribution)
 for `G<:AbstractVector` will independently with probability `rate` 
 replace element of an array independently by a sample from `tweak`.
 
-### Additive mutation
+### Additive mutation/"convolution"
 
 The operators
 
@@ -351,6 +351,9 @@ AdditiveMutation{G, DiscreteUniform}(rate, r, min, max)
 
 for specific distributions, which allow you to specify their scale
 parameters directly.
+
+This operator generalizes what is called "bounded uniform" and "Gaussian
+convolution" in Luke (2013).
 
 ### Bitflip mutation
 
