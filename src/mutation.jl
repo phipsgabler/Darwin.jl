@@ -27,16 +27,16 @@ function mutate!(individual::Individual{G}, operator::MutationOperator{G},
 end
 
 
-struct NoMutation{T} <: MutationOperator{T} end
+struct NoMutation <: MutationOperator{Any} end
 
-mutate!(genome::Any, strat::NoMutation) = genome
+mutate!(genome::Any, operator::NoMutation) = genome
 
 
-struct LiftedMutation{T, M, I} <: MutationOperator{T}
+struct LiftedMutation{G, M, I} <: MutationOperator{G}
     inner::M
 
-    LiftedMutation{T}(strat::M) where {T, I, M<:MutationOperator{I}} = new{T, M, I}(strat)
-    LiftedMutation{T, M}(args...) where {T, I, M<:MutationOperator{I}} = new{T, M, I}(M(args...))
+    LiftedMutation{G}(operator::M) where {G, I, M<:MutationOperator{I}} = new{G, M, I}(operator)
+    LiftedMutation{G, M}(args...) where {G, I, M<:MutationOperator{I}} = new{G, M, I}(M(args...))
 end
 
 
@@ -44,57 +44,60 @@ struct BitFlipMutation <: MutationOperator{AbstractVector{Bool}}
     rate::Rate
 end
 
-function mutate!(genome::AbstractVector{Bool}, strat::BitFlipMutation, generation::Integer)
+function mutate!(genome::AbstractVector{Bool}, operator::BitFlipMutation, generation::Integer)
     for i in eachindex(genome)
-        (rand() < strat.rate(generation)) && (genome[i] = !genome[i])
+        (rand() < operator.rate(generation)) && (genome[i] = !genome[i])
     end
 
     genome
 end
 
 
-struct PointwiseMutation{T<:AbstractVector} <: MutationOperator{T}
+struct PointwiseMutation{G<:AbstractVector} <: MutationOperator{G}
     rate::Rate
     tweak::Distribution{Univariate}
 
-    PointwiseMutation{T}(rate, tweak::Distribution{Univariate, Discrete}) where {T<:AbstractVector{<:Integer}} =
-        new{T}(rate, tweak)
-    PointwiseMutation{T}(rate, tweak::Distribution{Univariate, Continuous}) where {T<:AbstractVector{<:AbstractFloat}} =
-        new{T}(rate, tweak)
+    PointwiseMutation{G}(rate, tweak::Distribution{Univariate, Discrete}) where {G<:AbstractVector{<:Integer}} =
+        new{G}(rate, tweak)
+    PointwiseMutation{G}(rate, tweak::Distribution{Univariate, Continuous}) where {G<:AbstractVector{<:AbstractFloat}} =
+        new{G}(rate, tweak)
 end
 
-function mutate!(genome::T, strat::PointwiseMutation{T}, generation::Integer) where {T}
+function mutate!(genome::G, operator::PointwiseMutation{G},
+                 generation::Integer) where {G<:AbstractVector}
     for i in eachindex(genome)
-        (rand() < strat.rate(generation)) && (genome[i] = rand(strat.tweak))
+        (rand() < operator.rate(generation)) && (genome[i] = rand(operator.tweak))
     end
 
     genome
 end
 
 
-struct AdditiveMutation{T<:AbstractVector, D<:Distribution{Univariate}} <: MutationOperator{T}
+struct AdditiveMutation{G<:AbstractVector, D<:Distribution{Univariate}} <: MutationOperator{G}
     rate::Rate
     tweak::D
     min::Real
     max::Real
 
-    function AdditiveMutation{T}(rate, tweak::D, min, max) where {T, D<:Distribution{Univariate}}
+    function AdditiveMutation{G}(rate, tweak::D, min, max) where {G, D<:Distribution{Univariate}}
         @assert (mean(tweak) == 0) "`tweak` should have zero mean!"
-        new{T, D}(rate, tweak, min, max)
+        new{G, D}(rate, tweak, min, max)
     end
 
-    AdditiveMutation{T, D}(rate, r, min, max) where {T, D<:Uniform} =
-        new{T, D}(rate, D(-r, r), min, max)
-    AdditiveMutation{T, D}(rate, σ, min, max) where {T, D<:Normal} =
-        new{T, D}(rate, D(0, σ), min, max)
-    AdditiveMutation{T, D}(rate, r, min, max) where {T, D<:DiscreteUniform} =
-        new{T, D}(rate, D(-r, r), min, max)
+    AdditiveMutation{G, D}(rate, r, min, max) where {G, D<:Uniform} =
+        new{G, D}(rate, D(-r, r), min, max)
+    AdditiveMutation{G, D}(rate, σ, min, max) where {G, D<:Normal} =
+        new{G, D}(rate, D(0, σ), min, max)
+    AdditiveMutation{G, D}(rate, r, min, max) where {G, D<:DiscreteUniform} =
+        new{G, D}(rate, D(-r, r), min, max)
 end
 
-function mutate!(genome::T, strat::AdditiveMutation{T}, generation::Integer) where {T}
+function mutate!(genome::G, operator::AdditiveMutation{G},
+                 generation::Integer) where {G<:AbstractVector}
     for i in eachindex(genome)
-        if rand() ≤ strat.rate(generation)
-            genome[i] = rand(Truncated(Shifted(strat.tweak, genome[i]), strat.min, strat.max))
+        if rand() ≤ operator.rate(generation)
+            genome[i] = rand(Truncated(Shifted(operator.tweak, genome[i]),
+                                       operator.min, operator.max))
         end
     end
 

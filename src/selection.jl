@@ -13,7 +13,7 @@ export FitnessProportionateSelection,
     TournamentSelection
 
 
-abstract type SelectionOperator{T, P, K} end
+abstract type SelectionOperator{G, P, K} end
 
 setup!(operator::SelectionOperator, model::AbstractEvolutionaryModel) = operator
 
@@ -24,23 +24,23 @@ setup!(operator::SelectionOperator, model::AbstractEvolutionaryModel) = operator
 Select parts of population of a population to be used in breeding.  Should compare fitnesses using 
 `isless`, if that is relevant.
 """
-selection(population::Population{T}, operator::SelectionOperator{T, P, K},
-          generation::Integer) where {T, P, K} =
+selection(population::Population{G}, operator::SelectionOperator{G, P, K},
+          generation::Integer) where {G, P, K} =
     selection(population, operator)
 
 
-# struct TruncationSelection{T, P} <: SelectionOperator{T, P, 1} end
+# struct TruncationSelection{G, P} <: SelectionOperator{G, P, 1} end
 
-# function selection(population::Population{T}, operator::TruncationSelection{T, P}) where {T, P}
+# function selection(population::Population{G}, operator::TruncationSelection{G, P}) where {G, P}
 #     μ = length(population) ÷ P
 #     partialsort(model.population, 1:μ, by = fitness, rev = true)
 # end
 
 
-mutable struct PairWithBestSelection{T, P} <: SelectionOperator{T, P, 2}
+mutable struct PairWithBestSelection{G, P} <: SelectionOperator{G, P, 2}
     model::AbstractEvolutionaryModel
 
-    PairWithBestSelection{T, P}() where {T, P} = new{T, P}()
+    PairWithBestSelection{G, P}() where {G, P} = new{G, P}()
 end
 
 function setup!(operator::PairWithBestSelection, model::AbstractEvolutionaryModel)
@@ -48,20 +48,20 @@ function setup!(operator::PairWithBestSelection, model::AbstractEvolutionaryMode
     operator
 end
 
-function selection(population::Population{T}, operator::PairWithBestSelection{T, P}) where {T, P}
+function selection(population::Population{G}, operator::PairWithBestSelection{G, P}) where {G, P}
     # simple naive groupings that pair the best entitiy with every other
     fittest = findfittest(operator.model)
     PairWithBestSelectionIterator{P}(population, fittest)
 end
 
-struct PairWithBestSelectionIterator{P, M, T}
-    population::Population{T}
-    fittest::Individual{T}
+struct PairWithBestSelectionIterator{P, M, G}
+    population::Population{G}
+    fittest::Individual{G}
 
-    function PairWithBestSelectionIterator{P}(population::Population{T},
-                                              fittest::Individual{T}) where {P, T}
+    function PairWithBestSelectionIterator{P}(population::Population{G},
+                                              fittest::Individual{G}) where {P, G}
         M = length(population) ÷ P
-        new{P, M, T}(population, fittest)
+        new{P, M, G}(population, fittest)
     end
 end
 
@@ -95,28 +95,28 @@ end
 
 
 
-struct FitnessProportionateSelection{T, P, K, F} <: SelectionOperator{T, P, K}
+struct FitnessProportionateSelection{G, P, K, F} <: SelectionOperator{G, P, K}
     transform::F
     temperature::Rate
 end
 
-function selection(population::Population{T},
-                   operator::FitnessProportionateSelection{T, P, K},
-                   generation::Integer) where {T, P, K}
+function selection(population::Population{G},
+                   operator::FitnessProportionateSelection{G, P, K},
+                   generation::Integer) where {G, P, K}
     function transform(f)
         operator.transform(f, operator.temperature(generation))
     end
     FitnessProportionateSelectionIterator{P, K}(population, transform)
 end
 
-struct FitnessProportionateSelectionIterator{M, P, K, T}
-    population::Population{T}
+struct FitnessProportionateSelectionIterator{M, P, K, G}
+    population::Population{G}
     transform
 
-    function FitnessProportionateSelectionIterator{P, K}(population::Population{T},
-                                                         transform) where {P, K, T}
+    function FitnessProportionateSelectionIterator{P, K}(population::Population{G},
+                                                         transform) where {P, K, G}
         M = length(population) ÷ P
-        new{M, P, K, T}(population, transform)
+        new{M, P, K, G}(population, transform)
     end
 end
 
@@ -142,28 +142,28 @@ function softmax(f, θ = 1)
     y ./ sum(y)
 end
 
-const SoftmaxSelection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(softmax)}
-(::Type{SoftmaxSelection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
-    SoftmaxSelection{T, P, K}(softmax, rate)
+const SoftmaxSelection{G, P, K} = FitnessProportionateSelection{G, P, K, typeof(softmax)}
+(::Type{SoftmaxSelection{G, P, K}})(rate::Rate = ConstantRate(1.0)) where {G, P, K} =
+    SoftmaxSelection{G, P, K}(softmax, rate)
 
-const L1Selection{T, P, K} = FitnessProportionateSelection{T, P, K, typeof(l1normalize)}
-(::Type{L1Selection{T, P, K}})(rate::Rate = ConstantRate(1.0)) where {T, P, K} =
-    L1Selection{T, P, K}(l1normalize, rate)
-
-
+const L1Selection{G, P, K} = FitnessProportionateSelection{G, P, K, typeof(l1normalize)}
+(::Type{L1Selection{G, P, K}})() where {G, P, K} =
+    L1Selection{G, P, K}(l1normalize, ConstantRate(1.0))
 
 
-struct TournamentSelection{T, S, P, K} <: SelectionOperator{T, P, K} end
 
-selection(population::Population{T}, operator::TournamentSelection{T, S, P, K}) where {T, S, P, K} = 
+
+struct TournamentSelection{G, S, P, K} <: SelectionOperator{G, P, K} end
+
+selection(population::Population{G}, operator::TournamentSelection{G, S, P, K}) where {G, S, P, K} = 
     TournamentSelectionIterator{S, P, K}(population)
 
-struct TournamentSelectionIterator{M, S, P, K, T}
-    population::Population{T}
+struct TournamentSelectionIterator{M, S, P, K, G}
+    population::Population{G}
 
-    function TournamentSelectionIterator{S, P, K}(population::Population{T}) where {S, P, K, T}
+    function TournamentSelectionIterator{S, P, K}(population::Population{G}) where {S, P, K, G}
         M = length(population) ÷ P
-        new{M, S, P, K, T}(population)
+        new{M, S, P, K, G}(population)
     end
 end
 

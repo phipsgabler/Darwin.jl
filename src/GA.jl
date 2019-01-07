@@ -3,13 +3,13 @@ const L = LearningStrategies
 
 export GAStrategy, GAModel
 
-mutable struct GAModel{T, F<:AbstractFitness{>:T}} <: AbstractEvolutionaryModel
-    population::Population{T}
+mutable struct GAModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
+    population::Population{G}
     fitness::F
-    fittest::Individual{T}
+    fittest::Individual{G}
     
-    GAModel(population::Population{T}, fitness) where {T} =
-        new{T, typeof(fitness)}(population, fitness)
+    GAModel(population::Population{G}, fitness) where {G} =
+        new{G, typeof(fitness)}(population, fitness)
 end
 
 
@@ -18,35 +18,35 @@ findfittest!(model::GAModel) = model.fittest = maximumby(i -> assess!(i, model.f
 findfittest(model::GAModel) = model.fittest
 
 
-mutable struct GAStrategy{T, P, K,
-                          Fs<:SelectionOperator{>:T, P, K},
-                          Fc<:CrossoverOperator{>:T, K, P},
-                          Fm<:MutationOperator{>:T}} <: L.LearningStrategy
+mutable struct GAStrategy{G, P, K,
+                          Fs<:SelectionOperator{>:G, P, K},
+                          Fc<:CrossoverOperator{>:G, K, P},
+                          Fm<:MutationOperator{>:G}} <: L.LearningStrategy
     selection::Fs
     crossover::Fc
     mutation::Fm
-    cache::Population{T}
+    cache::Population{G}
 
     function GAStrategy(selection::SelectionOperator{U, P, K},
                         crossover::CrossoverOperator{V, K, P},
                         mutation::MutationOperator{W}) where {U, V, W, P, K}
-        T = typejoin(U, V, W)
+        G = typejoin(U, V, W)
         S, C, M = typeof(selection), typeof(crossover), typeof(mutation)
-        new{T, P, K, S, C, M}(selection, crossover, mutation, Population{T}())
+        new{G, P, K, S, C, M}(selection, crossover, mutation, Population{G}())
     end
 
-    function GAStrategy{T}(selection::SelectionOperator{>:T, P, K},
-                           crossover::CrossoverOperator{>:T, K, P},
-                           mutation::MutationOperator{>:T}) where {T, P, K}
+    function GAStrategy{G}(selection::SelectionOperator{>:G, P, K},
+                           crossover::CrossoverOperator{>:G, K, P},
+                           mutation::MutationOperator{>:G}) where {G, P, K}
         S, C, M = typeof(selection), typeof(crossover), typeof(mutation)
-        new{T, P, K, S, C, M}(selection, crossover, mutation, Population{T}())
+        new{G, P, K, S, C, M}(selection, crossover, mutation, Population{G}())
     end
 end
 
 preparecache!(strategy::GAStrategy, n) = sizehint!(empty!(strategy.cache), n)
 
 
-function L.setup!(strategy::GAStrategy{T}, model::GAModel{T}) where T
+function L.setup!(strategy::GAStrategy{G}, model::GAModel{G}) where G
     # setup!(model.fitness, model)
     setup!(strategy.selection, model)
     setup!(strategy.mutation, model)
@@ -55,12 +55,12 @@ function L.setup!(strategy::GAStrategy{T}, model::GAModel{T}) where T
 end
 
 
-function L.update!(model::GAModel{T}, strategy::GAStrategy{T, P, K}, i, _item) where {T, P, K}
+function L.update!(model::GAModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
     preparecache!(strategy, length(model.population))
 
     # TODO: log timing information
-    for parents::Family{T, K} in selection(model.population, strategy.selection, i)
-        for child in crossover!(copy.(parents), strategy.crossover, i)::Family{T, P}
+    for parents::Family{G, K} in selection(model.population, strategy.selection, i)
+        for child in crossover!(copy.(parents), strategy.crossover, i)::Family{G, P}
             push!(strategy.cache, mutate!(child, strategy.mutation, i))
         end
     end

@@ -7,7 +7,7 @@ export assess!,
     FitnessFunction,
     setup!
 
-abstract type AbstractFitness{T} <: Function end
+abstract type AbstractFitness{G} <: Function end
 
 setup!(f::AbstractFitness) = f
 
@@ -18,7 +18,7 @@ setup!(f::AbstractFitness) = f
 Calculate fitness of `individual`, returning a `FitnessValue`.  Stores the result of assessment in 
 the individual, so the actual calculation is done at most once.
 """
-function assess!(individual::Individual{T}, f::AbstractFitness{>:T}) where {T}
+function assess!(individual::Individual{G}, f::AbstractFitness{>:G}) where {G}
     if individual.fitnessvalue === nothing
         individual.fitnessvalue = f(individual.genome)
     end
@@ -27,13 +27,13 @@ function assess!(individual::Individual{T}, f::AbstractFitness{>:T}) where {T}
 end
 
 
-struct FitnessFunction{T, F} <: AbstractFitness{T}
+struct FitnessFunction{G, F} <: AbstractFitness{G}
     evaluate::F
 
-    FitnessFunction{T}(f::F) where {T, F} = new{T, F}(f)
+    FitnessFunction{G}(f::F) where {G, F} = new{G, F}(f)
 end
 
-(f::FitnessFunction{T})(genome::T) where {T} = f.evaluate(genome)
+(f::FitnessFunction{G})(genome::G) where {G} = f.evaluate(genome)
 
 
 

@@ -44,8 +44,10 @@ end
 const EMMutation = LiftedMutation{EqualityMonster, PointwiseMutation{Vector{Int}}}
 const EMMutation2 = LiftedMutation{EqualityMonster, AdditiveMutation{Vector{Int}, DiscreteUniform}}
 
-function mutate!(child::EqualityMonster, strat::Union{EMMutation, EMMutation2}, generation::Integer)
-    mutate!(child.abcde, strat.inner, generation)
+function mutate!(child::EqualityMonster,
+                 operator::Union{EMMutation, EMMutation2},
+                 generation::Integer)
+    mutate!(child.abcde, operator.inner, generation)
     child
 end
 

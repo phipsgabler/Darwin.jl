@@ -12,25 +12,25 @@ export ArithmeticCrossover,
     UniformCrossover
 
 
-abstract type CrossoverOperator{T, K, P} end
+abstract type CrossoverOperator{G, K, P} end
 
 
 setup!(operator::CrossoverOperator, model::AbstractEvolutionaryModel) = operator
 
 
 """
-    LiftedCrossover{T, C}(args)
+    LiftedCrossover{G, C}(args)
 
-Lifts a `CrossoverOperator{I, K, P}` on `I`, to a new `CrossoverOperator{T, K, P}` on `T`, 
+Lifts a `CrossoverOperator{I, K, P}` on `I`, to a new `CrossoverOperator{G, K, P}` on `G`, 
 by storing `C(args)`.  The actual application/lifting needs to be defined manually.
 """
-struct LiftedCrossover{T, C, I, K, P} <: CrossoverOperator{T, K, P}
+struct LiftedCrossover{G, C, I, K, P} <: CrossoverOperator{G, K, P}
     inner::C
 
-    LiftedCrossover{T}(operator::C) where {T, I, K, P, C<:CrossoverOperator{I, K, P}} =
-        new{T, C, I, K, P}(operator)
-    LiftedCrossover{T, C}(args...) where {T, I, K, P, C<:CrossoverOperator{I, K, P}} =
-        new{T, C, I, K, P}(C(args...))
+    LiftedCrossover{G}(operator::C) where {G, I, K, P, C<:CrossoverOperator{I, K, P}} =
+        new{G, C, I, K, P}(operator)
+    LiftedCrossover{G, C}(args...) where {G, I, K, P, C<:CrossoverOperator{I, K, P}} =
+        new{G, C, I, K, P}(C(args...))
 end
 
 
@@ -40,26 +40,26 @@ end
 Perform crossover between `parents`.  You only need to define the method for `parents` being an
 `NTuple`; this method will be automatically lifted to `Family`s (i.e., tuples of `Individual`s).
 """
-crossover!(parents::Family{T, K},
-           operator::CrossoverOperator{T, K, P},
-           generation::Int) where {T, K, P} =
+crossover!(parents::Family{G, K},
+           operator::CrossoverOperator{G, K, P},
+           generation::Int) where {G, K, P} =
     Individual.(crossover!(genome.(parents), operator, generation))
 
 
 
-struct NoCrossover{T, N} <: CrossoverOperator{T, N, N} end
+struct NoCrossover{G, N} <: CrossoverOperator{G, N, N} end
 
 crossover!(parents::NTuple{N}, operator::NoCrossover{N}, generation::Integer) where {N} =
     parents
 
 
-struct ArithmeticCrossover{T<:AbstractVector, K, P} <: CrossoverOperator{T, K, P}
+struct ArithmeticCrossover{G<:AbstractVector, K, P} <: CrossoverOperator{G, K, P}
     rate::Rate
 end
 
-function crossover!(parents::NTuple{2, T},
-                    operator::ArithmeticCrossover{T, 2, 2},
-                    generation::Integer) where {T}
+function crossover!(parents::NTuple{2, G},
+                    operator::ArithmeticCrossover{G, 2, 2},
+                    generation::Integer) where {G}
     if rand() < operator.rate(generation)
         mixing = rand()
         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],
@@ -70,29 +70,29 @@ function crossover!(parents::NTuple{2, T},
 end
 
 
-struct UniformCrossover{T<:AbstractVector, K, P} <: CrossoverOperator{T, K, P}
+struct UniformCrossover{G<:AbstractVector, K, P} <: CrossoverOperator{G, K, P}
     p::Rate
     
-    UniformCrossover{T, K, P}(p::Rate = ConstantRate(0.5)) where {T, K, P} = new{T, K, P}(p)
+    UniformCrossover{G, K, P}(p::Rate = ConstantRate(0.5)) where {G, K, P} = new{G, K, P}(p)
 end
 
-function crossover!(parents::NTuple{2, T},
-                    operator::UniformCrossover{T, 2, 1},
-                    generation::Integer) where {T}
+function crossover!(parents::NTuple{2, G},
+                    operator::UniformCrossover{G, 2, 1},
+                    generation::Integer) where {G}
     crossover_points = rand(length(parents[1])) .≤ operator.p(generation)
     (map(ifelse, crossover_points, parents...),)
 end
 
-function crossover!(parents::NTuple{2, T},
-                    operator::UniformCrossover{T, 2, 2},
-                    generation::Integer) where {T}
+function crossover!(parents::NTuple{2, G},
+                    operator::UniformCrossover{G, 2, 2},
+                    generation::Integer) where {G}
     crossover_points = rand(length(parents[1])) .≤ operator.p(generation)
     map(ifelse, crossover_points, parents...), map(ifelse, .~crossover_points, parents...)
 end
 
 
 
-# function crossover!(parents::Family{T, 1}, operator::ArithmeticCrossover{T, 1}) where {T}
+# function crossover!(parents::Family{G, 1}, operator::ArithmeticCrossover{G, 1}) where {G}
 #     if rand() < operator.rate
 #         mixing = rand()
 #         return ((1 - mixing) .* parents[1] .+ mixing .* parents[2],
@@ -103,7 +103,7 @@ end
 # end
 
 ## TODO: move D to operator struct, use something different than "N random parent permutations"?
-# function crossover(parents::NTuple{N, <:AbstractArray{T}}, operator::ArithmeticCrossover{T, N}) where {T}
+# function crossover(parents::NTuple{N, <:AbstractArray{G}}, operator::ArithmeticCrossover{G, N}) where {G}
 #     D = Dirichlet(N, 1)
     
 #     if rand() < operator.rate
@@ -118,12 +118,12 @@ end
 # end
 
 
-# struct UniformCrossover{T} <: CrossoverOperator{NTuple{2, <:AbstractArray{T}}}
+# struct UniformCrossover{G} <: CrossoverOperator{NTuple{2, <:AbstractArray{G}}}
 #     p::Float64
 #     _dist::Bernoulli
 # end
 
-# function crossover!((p₁, p₂)::NTuple{2, <:AbstractArray{T}}, operator::UniformCrossover{T}) where {T}
+# function crossover!((p₁, p₂)::NTuple{2, <:AbstractArray{G}}, operator::UniformCrossover{G}) where {G}
 #     @assert length(p₁) == length(p₂)
 #     l = length(p₁)
     
