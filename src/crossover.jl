@@ -47,7 +47,7 @@ crossover!(parents::Family{G, K},
 
 
 
-struct NoCrossover{G, N} <: CrossoverOperator{G, N, N} end
+struct NoCrossover{N} <: CrossoverOperator{Any, N, N} end
 
 crossover!(parents::NTuple{N}, operator::NoCrossover{N}, generation::Integer) where {N} =
     parents
