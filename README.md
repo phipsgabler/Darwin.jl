@@ -313,6 +313,39 @@ crossover!(parents::NTuple{K, G}, operator::YourCrossover{G, K, P}, generation::
 which should return an `NTuple{P, G}`.  This function is automatically lifted to `Family{K, G}`, so
 you don’t have to care about lifting `Individual`s.
 
+If you need to perform some initialization of the operator with the model, you can overload
+`setup!(operator, model)`.
+
+### Arithmetic Crossover
+
+The operators
+
+```julia
+ArithmeticCrossover{G, K, P}(rate::Rate)
+```
+
+will produce, with probability `rate`, produce cross-wise convex combinations between the parents,
+using an arbitrary mixing coefficient.  Currently, only `K == P == 2` is supported; this means that
+the mixed result will be
+
+```julia
+((1 - mixing) .* parents[1] .+ mixing .* parents[2], (1 - mixing) .* parents[2] .+ mixing .* parents[1])
+```
+
+`G` must be a subtype of `AbstractVector` with elements supporting the necessary arithmetic.
+
+### Uniform Crossover
+
+The operators
+
+```julia
+UniformCrossover{G, K, P}(p::Rate = 0.5)
+```
+
+for an `AbstractVector` `G` will independently choose each child element among all parent elements
+at the same index, depending on a Bernoulli choice with parameter `p`.  Currently, the variants
+`UniformCrossover{G, 2, 1}` and `UniformCrossover{G, 2, 2}` are supported.
+
 ### Lifting
 
 If your genome type is a wrapper `G` about an "inner genome" `IG`, e.g. an array, you can reuse
