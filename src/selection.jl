@@ -1,4 +1,5 @@
 using Distributions
+using Random: shuffle
 import Base: iterate
 
 export select,
@@ -175,3 +176,38 @@ function iterate(itr::TournamentSelectionIterator{M, S, P, K}, state = 0) where 
     end
 end
 
+
+
+# struct SUSSelection{G, P, K} <: SelectionOperator{G, P, K} end
+
+# function selection(population::Population{G}, operator::SUSSelection{S, P, K})
+#     fitness_cdf = fitness.(population)
+#     fitness_cdf .-= minimum(fitness_cdf)
+#     sum(fitness_cdf) == 0 && fitness_cdf .= 1
+#     cumsum!(fitness_cdf, fitness_cdf)
+#     range = fitness_cdf[end] / length(fitness_cdf)
+
+#     SUSSelectionIterator{P, K}(population, shuffle(eachindex(population)), fitness_cdf, range)
+# end
+
+# struct SUSSelectionIterator{M, P, K, G}
+#     population::Population{G}
+#     permutation::Vector{Int}
+#     fitness_cdf::Vector{Float64}
+#     range::Float64
+
+#     function SUSSelectionIterator{P, K}(population::Population{G}, permutation::Vector{Int}
+#                                         fitness_cdf::Vector{Float64}, position::Float64) where {P, K, G}
+#         M = length(population) ÷ P
+#         new{M, P, K, G}(population, permutation, fitness_cdf, position)
+#     end
+# end
+
+# function iterate(itr::SUSSelectionIterator{M, P, K}, state = rand() * itr.range) where {P, K}
+#     if state > f[end]
+#         return nothing
+#     else
+#         index = findfirst(f -> f ≥ itr.position, view(itr.fitness_cdf, itr.permutation))
+#         return view(itr.population, itr.permutation)[index], state + itr.range
+#     end
+# end
