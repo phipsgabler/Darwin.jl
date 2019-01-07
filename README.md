@@ -289,6 +289,102 @@ Selects `K` times the best of `S` randomly chosen individuals.
 
 ## Mutation Operators
 
+Mutation operators inherit from the abstract type `MutationOperator{T}`, where `T` is the type of 
+genome that is mutated.  Every operator implementation consists of a subtype of `MutationOperator`,
+possibly with a specialization of the genome type, and a method
+
+```julia
+mutate!(genome::Genome, operator::YourOperator{Genome}, generation::Integer)
+```
+
+(possibly parametric in `Genome`, depending on what kinds of things are supported).  This method
+should execute the mutation in-place on the genome and return it (copying is done independently
+before, by the strategy).
+
+Mutation operators will likely involve `Rate` parameters, which should be called depending on
+`generation`.  The implementation is automatically lifted to
+
+```julia
+mutate!(individual::Individual{Genome}, operator::YourOperator{Genome}, generation::Integer)
+```
+
+so you don't need to care about updating fitness and the like.
+
+If you need to perform some initialization of the operator with the model, you can overload 
+`setup!(operator, model)`.
+
+### Trivial mutation
+
+In case you want to leave out mutation completely, there is ` NoMutation <: MutationOperator{Any}`
+which just returns the genome as-is.
+
+### Pointwise mutation
+
+The operators
+
+```julia
+PointwiseMutation{G}(rate::Rate, tweak::Distribution)
+```
+
+for `G<:AbstractVector` will independently with probability `rate` 
+replace element of an array independently by a sample from `tweak`.
+
+### Additive mutation
+
+The operators
+
+```julia
+AdditiveMutation{G}(rate::Rate, tweak::Distribution, min, max)
+```
+
+for `G<:AbstractVector` will independently with probability `rate` 
+modify each element of an array by adding a sample of `tweak`, which must
+be a distribution with zero mean.
+
+There are convenience constructors
+
+```julia
+AdditiveMutation{G, Uniform}(rate, r, min, max)
+AdditiveMutation{G, Normal}(rate, σ, min, max)
+AdditiveMutation{G, DiscreteUniform}(rate, r, min, max)
+```
+
+for specific distributions, which allow you to specify their scale
+parameters directly.
+
+### Bitflip mutation
+
+The operator
+
+```julia
+BitFlipMutation(rate::Rate)
+```
+
+for `AbstractVector{Bool}` will independently with probability `rate` 
+replace element of an array independently its negation.
+
+### Lifting
+
+If your genome type is a wrapper `G` about an "inner genome" `IG`, e.g. an array, you can reuse
+existing mutation operators by using
+
+```julia
+const YourOperator = LiftedMutation{G, SomeOperator{IG})
+```
+
+and manually defining the lifted mutation like
+
+```julia
+function mutate!(genome::G, operator::YourOperator, generation::Integer)
+    mutate!(genome.inner_genome, operator.inner, generation)
+    genome
+end
+```
+
+where `inner_genome` is the field you actually want the mutation to happen on.
+
+
+
 ## Literature
 
 Most useful is Luke (2013), as it contains a very consistent, detailed, but clear overview of very many common
