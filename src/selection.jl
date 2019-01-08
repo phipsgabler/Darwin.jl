@@ -24,6 +24,8 @@ setup!(operator::SelectionOperator, model::AbstractEvolutionaryModel) = operator
 
 Select parts of population of a population to be used in breeding.  Should compare fitnesses using 
 `isless`, if that is relevant.
+
+The result is an iterable of `Family{G, K}`.
 """
 selection(population::Population{G}, operator::SelectionOperator{G, P, K},
           generation::Integer) where {G, P, K} =

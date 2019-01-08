@@ -38,7 +38,8 @@ end
     crossover!(parents::Union{Family, NTuple}, operator, generation) -> children
 
 Perform crossover between `parents`.  You only need to define the method for `parents` being an
-`NTuple`; this method will be automatically lifted to `Family`s (i.e., tuples of `Individual`s).
+`NTuple{K}`, returning an `NTuple{P}`.  The method will be automatically lifted to `Family`s (i.e.,
+tuples of `Individual`s) of the same sizes.
 """
 crossover!(parents::Family{G, K},
            operator::CrossoverOperator{G, K, P},
