@@ -29,8 +29,6 @@ mutable struct GAStrategy{G, P, K,
     end
 end
 
-preparecache!(strategy::GAStrategy, n) = sizehint!(empty!(strategy.cache), n)
-
 
 function L.setup!(strategy::GAStrategy{G}, model::AbstractPopulationModel{G}) where G
     # setup!(model.fitness, model)
@@ -41,13 +39,14 @@ function L.setup!(strategy::GAStrategy{G}, model::AbstractPopulationModel{G}) wh
 end
 
 
-function L.update!(model::AbstractPopulationModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
-    preparecache!(strategy, length(model.population))
+function L.update!(model::AbstractPopulationModel{G}, strategy::GAStrategy{G, P, K},
+                   generation, _item) where {G, P, K}
+    preparecache!(strategy.cache, length(model.population))
 
     # TODO: log timing information
-    for parents::Family{G, K} in selection(model.population, strategy.selection, i)
-        for child in crossover!(copy.(parents), strategy.crossover, i)::Family{G, P}
-            push!(strategy.cache, mutate!(child, strategy.mutation, i))
+    for parents::Family{G, K} in selection(model.population, strategy.selection, generation)
+        for child in crossover!(copy.(parents), strategy.crossover, generation)::Family{G, P}
+            push!(strategy.cache, mutate!(child, strategy.mutation, generation))
         end
     end
 
@@ -59,8 +58,9 @@ function L.update!(model::AbstractPopulationModel{G}, strategy::GAStrategy{G, P,
 end
 
 
-function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::AbstractPopulationModel, data, i)
-    done = L.finished(verbose_strategy.strategy, model, data, i)
-    done && @info "Evolved $i generations, final population size $(length(model.population))"
+function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::AbstractPopulationModel,
+                    data, generation)
+    done = L.finished(verbose_strategy.strategy, model, data, generation)
+    done && @info "Evolved $generation generations, final population size $(length(model.population))"
     done
 end

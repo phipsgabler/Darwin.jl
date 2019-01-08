@@ -29,6 +29,8 @@ randview(collection, n) = view(collection, rand(eachindex(collection), n))
 repeatfunc(f, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated(()))
 repeatfunc(f, n, args...) = Iterators.map(((),) -> f(args...), Iterators.repeated((), n))
 
+preparecache!(cache, n) = sizehint!(empty!(cache), n)
+
 
 # see https://github.com/JuliaLang/julia/blob/master/doc/src/devdocs/ast.md
 # using MacroTools
