@@ -71,11 +71,14 @@ would be the most common one, specifying termination after `g` generations and p
 `strat` (see [here](https://github.com/JuliaML/LearningStrategies.jl#built-in-strategies) for about
 other strategies).
 
-### Types
+
+## Types
 
 Mostly everything is parametrized by a first type parameter `G` for the "things which should be
-optimized" -- that is, the genome which is used.
+optimized" -- that is, the genome which is used.  The type `G` should implement `rand`, `copy`, and
+have an `AbstractFitness{G}` object associated with it.
 
+### Individuals/Fitness Caching
 Internally in models and such, not `G` itself is used, but a wrapper `Individual{G}`, which has an
 additional field for caching the fitness of a genome.  Thus you don't have deal with fitness caching
 yourself.
@@ -94,10 +97,33 @@ population for your problem, like the following:
 Population(rand(Genome, N))
 ```
 
-The type `G` should implement `rand`, `copy`, and have an `AbstractFitness{G}` object associated
-with it.
+Fitness evaluation is done from outside, using `asses!` from the strategy.  Thus, the individual
+does not need to care about knowing its fitness function or model.
 
-#### Rate Parameters
+### Models
+
+There is a type `AbstractPopulationModel`, in case there should be need to specialize models
+some time.  However, in all usual cases, the only provided concrete type `PopulationModel`
+should be enough.  A model needs to fulfil the following interface:
+
+- A field `population`, keeping an array to the population.  Some models, such as `GAModel`, modify
+  this field in place – in that case, making the type `mutable` is required.
+- A field `fittest`, keeping the currently fittest individual as specified by the fitness of the
+  model, and a method of `assessfitness!` to assess the fitness of all `Individual`s in the
+  population and saving the fittest one.
+  
+The provided `PopulationModel` is the trivial implementation of this contract, by being defined as
+follows: 
+
+```julia
+mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
+    population::Population{G}
+    fitness::F
+    fittest::Individual{G}
+end
+```
+
+### Rate Parameters
 
 The abstract type `Rate` should be used at places for rate parameters, such as tempering factors or
 mutation rates.  An implementation of `Rate` should be callable on positive `Integer`s, representing

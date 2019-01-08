@@ -1,5 +1,4 @@
-export findfittest!,
-    findfittest,
+export assessfitness!,
     PopulationModel
 
 mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
@@ -12,6 +11,5 @@ mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutiona
 end
 
 
-findfittest!(model::PopulationModel) = model.fittest = maximumby(i -> assess!(i, model.fitness),
-                                                                 model.population)
-findfittest(model::PopulationModel) = model.fittest
+assessfitness!(model::PopulationModel) = model.fittest = maximumby(i -> assess!(i, model.fitness),
+                                                                   model.population)

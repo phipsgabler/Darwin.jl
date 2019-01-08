@@ -53,8 +53,7 @@ end
 
 function selection(population::Population{G}, operator::PairWithBestSelection{G, P}) where {G, P}
     # simple naive groupings that pair the best entitiy with every other
-    fittest = findfittest(operator.model)
-    PairWithBestSelectionIterator{P}(population, fittest)
+    PairWithBestSelectionIterator{P}(population, operator.model.fittest)
 end
 
 struct PairWithBestSelectionIterator{P, M, G}

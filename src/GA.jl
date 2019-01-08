@@ -37,7 +37,7 @@ function L.setup!(strategy::GAStrategy{G}, model::PopulationModel{G}) where G
     setup!(strategy.selection, model)
     setup!(strategy.mutation, model)
     setup!(strategy.crossover, model)
-    findfittest!(model)
+    assessfitness!(model)
 end
 
 
@@ -53,8 +53,7 @@ function L.update!(model::PopulationModel{G}, strategy::GAStrategy{G, P, K}, i, 
 
     # swap parents and children -- saves reallocations
     model.population, strategy.cache = strategy.cache, model.population
-
-    findfittest!(model)
+    assessfitness!(model)
 
     model
 end
