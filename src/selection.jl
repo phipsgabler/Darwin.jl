@@ -32,12 +32,6 @@ selection(population::Population{G}, operator::SelectionOperator{G, P, K},
     selection(population, operator)
 
 
-# struct TruncationSelection{G, P} <: SelectionOperator{G, P, 1} end
-
-# function selection(population::Population{G}, operator::TruncationSelection{G, P}) where {G, P}
-#     μ = length(population) ÷ P
-#     partialsort(model.population, 1:μ, by = fitness, rev = true)
-# end
 
 
 mutable struct PairWithBestSelection{G, P} <: SelectionOperator{G, P, 2}
@@ -176,6 +170,17 @@ function iterate(itr::TournamentSelectionIterator{M, S, P, K}, state = 0) where 
         ntuple(i -> maximumby(fitness, randview(itr.population, S)), Val{K}()), state + 1
     end
 end
+
+
+
+
+struct TruncationSelection{G, P} <: SelectionOperator{G, P, 1} end
+
+function selection(population::Population{G}, operator::TruncationSelection{G, P}) where {G, P}
+    μ = length(population) ÷ P
+    partialsortperm(model.population, 1:μ, by = fitness, rev = true)
+end
+
 
 
 
