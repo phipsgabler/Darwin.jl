@@ -11,7 +11,7 @@ export BitFlipMutation,
 
 abstract type MutationOperator{G} end
 
-setup!(operator::MutationOperator, model) = operator
+setup!(operator::MutationOperator{G}, model::AbstractPopulationModel{G}) where {G} = operator
 
 
 """

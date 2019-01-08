@@ -16,7 +16,7 @@ export FitnessProportionateSelection,
 
 abstract type SelectionOperator{G, P, K} end
 
-setup!(operator::SelectionOperator, model::AbstractEvolutionaryModel) = operator
+setup!(operator::SelectionOperator{G}, model::AbstractPopulationModel{G}) where {G} = operator
 
 
 """
@@ -41,12 +41,12 @@ selection(population::Population{G}, operator::SelectionOperator{G, P, K},
 
 
 mutable struct PairWithBestSelection{G, P} <: SelectionOperator{G, P, 2}
-    model::AbstractEvolutionaryModel
+    model::AbstractPopulationModel
 
     PairWithBestSelection{G, P}() where {G, P} = new{G, P}()
 end
 
-function setup!(operator::PairWithBestSelection, model::AbstractEvolutionaryModel)
+function setup!(operator::PairWithBestSelection, model::AbstractPopulationModel)
     operator.model = model
     operator
 end

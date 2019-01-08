@@ -15,7 +15,7 @@ export ArithmeticCrossover,
 abstract type CrossoverOperator{G, K, P} end
 
 
-setup!(operator::CrossoverOperator, model::AbstractEvolutionaryModel) = operator
+setup!(operator::CrossoverOperator{G}, model::AbstractPopulationModel{G}) where {G} = operator
 
 
 """

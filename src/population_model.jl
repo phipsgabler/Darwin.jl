@@ -1,7 +1,7 @@
 export assessfitness!,
     PopulationModel
 
-mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
+mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractPopulationModel{G}
     population::Population{G}
     fitness::F
     fittest::Individual{G}

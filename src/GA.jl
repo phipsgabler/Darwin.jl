@@ -32,7 +32,7 @@ end
 preparecache!(strategy::GAStrategy, n) = sizehint!(empty!(strategy.cache), n)
 
 
-function L.setup!(strategy::GAStrategy{G}, model::PopulationModel{G}) where G
+function L.setup!(strategy::GAStrategy{G}, model::AbstractPopulationModel{G}) where G
     # setup!(model.fitness, model)
     setup!(strategy.selection, model)
     setup!(strategy.mutation, model)
@@ -41,7 +41,7 @@ function L.setup!(strategy::GAStrategy{G}, model::PopulationModel{G}) where G
 end
 
 
-function L.update!(model::PopulationModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
+function L.update!(model::AbstractPopulationModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
     preparecache!(strategy, length(model.population))
 
     # TODO: log timing information
@@ -59,7 +59,7 @@ function L.update!(model::PopulationModel{G}, strategy::GAStrategy{G, P, K}, i, 
 end
 
 
-function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::PopulationModel, data, i)
+function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::AbstractPopulationModel, data, i)
     done = L.finished(verbose_strategy.strategy, model, data, i)
     done && @info "Evolved $i generations, final population size $(length(model.population))"
     done

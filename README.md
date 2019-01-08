@@ -31,7 +31,7 @@ operators, lifting of them, rate parameters, etc.
 In the style of `LearningStrategies`, you need to define define two things for optimizing a problem:
 
 - A model, which contains the data and specification of the problem -- _what is be optimized_.  In
-  this package, this will be a subtype of `AbstractEvolutionaryModel`, holding at least the
+  this package, this will be a subtype of `AbstractPopulationModel`, holding at least the
   population and fitness.  Usually, the `PopulationModel` type will be enough for this.
 - A `LearningStrategy` which determines _how the model should be optimized_.  This corresponds to a
   certain algorithm, such as `GAStrategy`.  The strategy includes the genetic operators and internal
@@ -102,21 +102,24 @@ does not need to care about knowing its fitness function or model.
 
 ### Models
 
-There is a type `AbstractPopulationModel`, in case there should be need to specialize models
-some time.  However, in all usual cases, the only provided concrete type `PopulationModel`
-should be enough.  A model needs to fulfil the following interface:
+There is a type `AbstractPopulationModel{G}`, in case there should be need to specialize models some
+time.  However, in all usual cases, the only provided concrete type `PopulationModel` should be
+enough.  The parameter `G` as always specifies the genome type.
 
-- A field `population`, keeping an array to the population.  Some models, such as `GAModel`, modify
+
+A model needs to fulfil the following interface:
+
+- A field `population`, keeping a `Population{G}`.  Some models, such as `GAModel`, modify
   this field in place – in that case, making the type `mutable` is required.
-- A field `fittest`, keeping the currently fittest individual as specified by the fitness of the
-  model, and a method of `assessfitness!` to assess the fitness of all `Individual`s in the
+- A field `fittest`, keeping the currently fittest `Individual{G}` as specified by the fitness of
+  the model, and a method of `assessfitness!` to assess the fitness of all individuals in the
   population and saving the fittest one.
   
 The provided `PopulationModel` is the trivial implementation of this contract, by being defined as
 follows: 
 
 ```julia
-mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
+mutable struct PopulationModel{G, F<:AbstractFitness{>:G}} <: AbstractPopulationModel
     population::Population{G}
     fitness::F
     fittest::Individual{G}

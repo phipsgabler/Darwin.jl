@@ -4,7 +4,7 @@ export AbstractEvolutionaryModel,
     FitnessValue
 
 
-abstract type AbstractEvolutionaryModel end
+abstract type AbstractPopulationModel{G} end
 
 const FitnessValue = Float64
 
