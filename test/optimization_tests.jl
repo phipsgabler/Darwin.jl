@@ -16,7 +16,7 @@ const Entity = Vector{Float64}
 
 function run_with(fitness, bounds, selection, crossover, mutation, generations)
     initial_population = Population([rand(bounds, 2) for _ in 1:128])
-    model = GAModel(initial_population, fitness)
+    model = PopulationModel(initial_population, fitness)
     strat = strategy(Verbose(GAStrategy(selection, crossover, mutation)),
                      MaxIter(generations))
     learn!(model, strat)

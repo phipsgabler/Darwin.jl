@@ -32,7 +32,7 @@ In the style of `LearningStrategies`, you need to define define two things for o
 
 - A model, which contains the data and specification of the problem -- _what is be optimized_.  In
   this package, this will be a subtype of `AbstractEvolutionaryModel`, holding at least the
-  population and fitness.
+  population and fitness.  Usually, the `PopulationModel` type will be enough for this.
 - A `LearningStrategy` which determines _how the model should be optimized_.  This corresponds to a
   certain algorithm, such as `GAStrategy`.  The strategy includes the genetic operators and internal
   values, e.g. caches.
@@ -40,7 +40,7 @@ In the style of `LearningStrategies`, you need to define define two things for o
 Let's look at an example for GAs:
 
 ```julia
-model = GAModel(initial_population, fitness)
+model = PopulationModel(initial_population, fitness)
 strat = strategy(GAStrategy(selection, crossover, mutation), MaxIter(generations))
 learn!(model, strat)
 ```
@@ -169,7 +169,7 @@ A simple GA run might thus look as follows:
 
 ```julia
 initial_population = rand(Individual{Genome}, N)
-model = GAModel(initial_population, fitness)
+model = PopulationModel(initial_population, fitness)
 strat = strategy(Verbose(GAStrategy(selection, crossover, mutation)),
                  MaxIter(generations))
 learn!(model, strat)
@@ -263,7 +263,7 @@ PairWithBestSelection{G, P}()
 ```
 
 Selects `length(population) ÷ P` 2-tuples of random individuals, paired with the currently best
-individual (obtained from the `GAModel` through its `fittest` property).
+individual (obtained from the `PopulationModel` through its `fittest` property).
 
 ### Fitness-Proportionate Selection
 

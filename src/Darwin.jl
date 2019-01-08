@@ -13,6 +13,8 @@ include("utils.jl")
 include("individual.jl")
 include("rates.jl")
 include("fitness.jl")
+include("population_model.jl")
+
 include("selection.jl")
 include("mutation.jl")
 include("crossover.jl")

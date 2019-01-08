@@ -55,7 +55,7 @@ end
 
 function run_with(selection, crossover, mutation, generations)
     initial_population = rand(Individual{EqualityMonster}, 64)
-    model = GAModel(initial_population, fitness)
+    model = PopulationModel(initial_population, fitness)
     strat = strategy(Verbose(GAStrategy(selection, crossover, mutation)),
                      MaxIter(generations))
     learn!(model, strat)

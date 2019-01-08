@@ -1,21 +1,7 @@
 import LearningStrategies
 const L = LearningStrategies
 
-export GAStrategy, GAModel
-
-mutable struct GAModel{G, F<:AbstractFitness{>:G}} <: AbstractEvolutionaryModel
-    population::Population{G}
-    fitness::F
-    fittest::Individual{G}
-    
-    GAModel(population::Population{G}, fitness) where {G} =
-        new{G, typeof(fitness)}(population, fitness)
-end
-
-
-findfittest!(model::GAModel) = model.fittest = maximumby(i -> assess!(i, model.fitness),
-                                                         model.population)
-findfittest(model::GAModel) = model.fittest
+export GAStrategy
 
 
 mutable struct GAStrategy{G, P, K,
@@ -46,7 +32,7 @@ end
 preparecache!(strategy::GAStrategy, n) = sizehint!(empty!(strategy.cache), n)
 
 
-function L.setup!(strategy::GAStrategy{G}, model::GAModel{G}) where G
+function L.setup!(strategy::GAStrategy{G}, model::PopulationModel{G}) where G
     # setup!(model.fitness, model)
     setup!(strategy.selection, model)
     setup!(strategy.mutation, model)
@@ -55,7 +41,7 @@ function L.setup!(strategy::GAStrategy{G}, model::GAModel{G}) where G
 end
 
 
-function L.update!(model::GAModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
+function L.update!(model::PopulationModel{G}, strategy::GAStrategy{G, P, K}, i, _item) where {G, P, K}
     preparecache!(strategy, length(model.population))
 
     # TODO: log timing information
@@ -74,7 +60,7 @@ function L.update!(model::GAModel{G}, strategy::GAStrategy{G, P, K}, i, _item) w
 end
 
 
-function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::GAModel, data, i)
+function L.finished(verbose_strategy::L.Verbose{<:GAStrategy}, model::PopulationModel, data, i)
     done = L.finished(verbose_strategy.strategy, model, data, i)
     done && @info "Evolved $i generations, final population size $(length(model.population))"
     done
